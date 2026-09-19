@@ -2,7 +2,6 @@
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_dir"
 build_dir="$project_dir/build"
-app_dir="$project_dir/dist/Sunarae.app"
 probe_dir="$build_dir/InputProbe.app"
 minimum_macos="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' Resources/Info.plist)"
 target_arch="$(uname -m)"

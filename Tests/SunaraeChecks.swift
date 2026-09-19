@@ -77,9 +77,9 @@ func runSunaraeChecks() {
         _ = session.input(keyCode: 15, modifiers: .capsLock, client: client)
         _ = session.input(keyCode: 40, modifiers: [], client: client)
         expect(client.view.string, "가", "Caps Lock preserves ordinary initial")
-        _ = session.input(keyCode: 40, modifiers: [], isRepeat: true, client: client)
+        _ = session.input(keyCode: 40, modifiers: [], client: client)
         expect(client.view.string, "까", "repeat event follows Sunarae")
-        _ = session.input(keyCode: 40, modifiers: [], isRepeat: true, client: client)
+        _ = session.input(keyCode: 40, modifiers: [], client: client)
         expect(client.view.string, "까ㅏ", "further repeat is ordinary vowel")
     }
 }

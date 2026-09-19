@@ -17,7 +17,7 @@ func runEditingChecks() {
             type(String(repeating: "f", count: count), session: session, client: client)
             var pendingDelete = false
             for index in 1...count {
-                if !session.input(keyCode: 51, modifiers: [], isRepeat: index > 1, client: client) {
+                if !session.input(keyCode: 51, modifiers: [], client: client) {
                     if index == count { pendingDelete = true }
                     else { client.view.deleteBackward(nil) }
                 }
@@ -85,7 +85,7 @@ func runEditingChecks() {
                         let label = "\(key)×\(count), direct=\(direct), ignoresEmpty=\(ignoresEmpty), prefix=\(prefix)"
                         expect(client.view.string, prefix + original, "repeat before delete \(label)")
                         for removed in 1...count {
-                            if !session.input(keyCode: 51, modifiers: [], isRepeat: removed > 1, client: client) {
+                            if !session.input(keyCode: 51, modifiers: [], client: client) {
                                 client.view.deleteBackward(nil)
                             }
                             expect(client.view.string, prefix + String(original.dropLast(removed)), "delete \(removed) \(label)")

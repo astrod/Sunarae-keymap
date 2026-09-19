@@ -31,7 +31,8 @@ final class InputSession {
         reset()
     }
 
-    func input(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, isRepeat: Bool = false,
+    // Key repeats use the same composition rules as separate key presses.
+    func input(keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
                client: TextClient) -> Bool {
         guard !processing else { return false }
         processing = true

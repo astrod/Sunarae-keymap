@@ -8,7 +8,8 @@ registration_mode=register
 if [[ "${2:-}" == '--register-only' ]]; then registration_mode=register-only; fi
 source_app="$artifact_dir/Sunarae.app"
 source_tool="$artifact_dir/Support/input-source"
-input_dir="$HOME/Library/Input Methods"
+# Packaging checks use an isolated directory and a stub registration tool.
+input_dir="${SUNARAE_INPUT_METHODS_DIR:-$HOME/Library/Input Methods}"
 installed_app="$input_dir/Sunarae.app"
 legacy_app="$input_dir/Dukkeobi.app"
 # Keep the registered identity so this upgrades the existing input source.

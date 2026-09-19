@@ -41,7 +41,7 @@ final class InputController: IMKInputController {
         guard let client = sender as? IMKTextInput else { return false }
         if event.type == .keyDown {
             return session.input(keyCode: event.keyCode, modifiers: event.modifierFlags,
-                                 isRepeat: event.isARepeat, client: IMKClient(client))
+                                 client: IMKClient(client))
         }
         // With direct output there may be no marked text for InputMethodKit's
         // default mouse handling to commit. End our local state on clicks too.

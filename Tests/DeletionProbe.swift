@@ -56,7 +56,7 @@ extension ProbeApp {
                                         "snapshot": snapshot, "passed": snapshot["text"] as? String == expected])
                     }
                     for count in stride(from: 4, through: 0, by: -1) {
-                        let handled = session.input(keyCode: 51, modifiers: [], isRepeat: count < 4, client: client)
+                        let handled = session.input(keyCode: 51, modifiers: [], client: client)
                         if !handled { target.doCommand(by: #selector(NSResponder.deleteBackward(_:))) }
                         let snapshot = try await deletionSnapshot()
                         client.document = snapshot["text"] as? String ?? ""
