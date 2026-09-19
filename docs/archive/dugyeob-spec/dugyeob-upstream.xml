@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<InputEntry>
+	<InputSchemeSetting flag="0" remark="&#x01;두겹이(두벌식 겹받침 e) - 만든이 : 신세기&#x0D;&#x0A;&#x0D;&#x0A;- 표준 두벌식을 개량한 자판으로 표준 두벌식의 모든 기능을 지원합니다.&#x0D;&#x0A;- 초성과 중성을 입력하면 I, J, K, L 자판이 겹받침 ㅆ, ㄶ, ㅄ, ㄺ로 일시적으로 자동으로 변경됩니다.&#x0D;&#x0A;- 이 네 키는 '받침 자리'에서 겹받침으로 입력됩니다.&#x0D;&#x0A;- 그 외의 겹받침은 두 키를 동시에 누르는 '모아치기'로 입력하실 수 있습니다.&#x0D;&#x0A;  (예) ㅀ은 ㄹ과 ㅎ을 동시에 눌러서 입력하실 수 있습니다.)&#x0D;&#x0A;- 이중모음이 가능한 경우 이중모음이 겹받침보다 우선적으로 입력됩니다.&#x0D;&#x0A;- 익숙하지 않으시다면 기존 두벌식 입력도 그대로 사용하실 수 있습니다.&#x0D;&#x0A;&#x0D;&#x0A;(두겹이 기본형은 기본적인 기능만 있습니다. 시프트락, 순아래입력, 겹받침확장 등의 부가기능을 쓰고자 하시는 분들께서는 부가기능 포함 파일을 적용해주세요.)&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;※ 별도로 제공되는 모아치기 프로그램을 사용하시면 초성과 중성을 동시에 입력하실 수 있습니다.&#x0D;&#x0A;  (예) '광'을 입력시, 'ㄱ', 'ㅗ', 'ㅏ'을 동시에 누른 후에 종성인 'ㅇ'을 누르시면 입력됩니다.)&#x0D;&#x0A;- Shift를 사용하는 글자(ㅉ, ㅒ 등등)는 모아치기 하실 수 없습니다.&#x0D;&#x0A;- 제대로 글자가 나오지 않는 경우에는 F8키를 누르셔서 모아치기 기능을 On으로 켜주세요.&#x0D;&#x0A;&#x0D;&#x0A;※ 자판에 대한 자세한 설명은 https://blog.naver.com/eekdland/224142632310 를 참고해주세요." name="두벌식 겹받침 e (두겹이)" object="CAdvancedScheme">
+		<KeyTable name="" flag="0" from="33" to="126">
+			<Key at="0x21" value="0x21"/>
+			<Key at="0x22" value="0x22"/>
+			<Key at="0x23" value="0x23"/>
+			<Key at="0x24" value="0x24"/>
+			<Key at="0x25" value="0x25"/>
+			<Key at="0x26" value="0x26"/>
+			<Key at="0x27" value="0x27"/>
+			<Key at="0x28" value="0x28"/>
+			<Key at="0x29" value="0x29"/>
+			<Key at="0x2A" value="0x2A"/>
+			<Key at="0x2B" value="0x2B"/>
+			<Key at="0x2C" value="0x2C"/>
+			<Key at="0x2D" value="0x2D"/>
+			<Key at="0x2E" value="0x2E"/>
+			<Key at="0x2F" value="0x2F"/>
+			<Key at="0x30" value="0x30"/>
+			<Key at="0x31" value="0x31"/>
+			<Key at="0x32" value="0x32"/>
+			<Key at="0x33" value="0x33"/>
+			<Key at="0x34" value="0x34"/>
+			<Key at="0x35" value="0x35"/>
+			<Key at="0x36" value="0x36"/>
+			<Key at="0x37" value="0x37"/>
+			<Key at="0x38" value="0x38"/>
+			<Key at="0x39" value="0x39"/>
+			<Key at="0x3A" value="0x3A"/>
+			<Key at="0x3B" value="0x3B"/>
+			<Key at="0x3C" value="0x3C"/>
+			<Key at="0x3D" value="0x3D"/>
+			<Key at="0x3E" value="0x3E"/>
+			<Key at="0x3F" value="0x3F"/>
+			<Key at="0x40" value="0x40"/>
+			<Key at="0x41" value="T&lt;=1 ? H2|M_ : H2|_M"/>
+			<Key at="0x42" value="H2|YU"/>
+			<Key at="0x43" value="T&lt;=1 ? H2|C_ : H2|_C"/>
+			<Key at="0x44" value="T&lt;=1 ? H2|Q_ : H2|_Q"/>
+			<Key at="0x45" value="H3|DD"/>
+			<Key at="0x46" value="T&lt;=1 ? H2|R_ : H2|_R"/>
+			<Key at="0x47" value="T&lt;=1 ? H2|H_ : H2|_H"/>
+			<Key at="0x48" value="H2|O_"/>
+			<Key at="0x49" value="T&lt;=1 ? H2|SS : H2|_SS"/>
+			<Key at="0x4A" value="H2|_NH"/>
+			<Key at="0x4B" value="H2|_BS"/>
+			<Key at="0x4C" value="H2|_RG"/>
+			<Key at="0x4D" value="H2|EU"/>
+			<Key at="0x4E" value="H2|U_"/>
+			<Key at="0x4F" value="H2|YAE"/>
+			<Key at="0x50" value="H2|YE"/>
+			<Key at="0x51" value="H3|BB"/>
+			<Key at="0x52" value="T&lt;=1 ? H2|GG : H2|_GG"/>
+			<Key at="0x53" value="T&lt;=1 ? H2|N_ : H2|_N"/>
+			<Key at="0x54" value="T&lt;=1 ? H2|SS : H2|_SS"/>
+			<Key at="0x55" value="H2|YEO"/>
+			<Key at="0x56" value="T&lt;=1 ? H2|P_ : H2|_P"/>
+			<Key at="0x57" value="H3|JJ"/>
+			<Key at="0x58" value="T&lt;=1 ? H2|T_ : H2|_T"/>
+			<Key at="0x59" value="H2|YO"/>
+			<Key at="0x5A" value="T&lt;=1 ? H2|K_ : H2|_K"/>
+			<Key at="0x5B" value="0x5B"/>
+			<Key at="0x5C" value="0x5C"/>
+			<Key at="0x5D" value="0x5D"/>
+			<Key at="0x5E" value="0x5E"/>
+			<Key at="0x5F" value="0x5F"/>
+			<Key at="0x60" value="0x60"/>
+			<Key at="0x61" value="T&lt;=1 ? H2|M_ : H2|_M"/>
+			<Key at="0x62" value="H2|YU"/>
+			<Key at="0x63" value="T&lt;=1 ? H2|C_ : H2|_C"/>
+			<Key at="0x64" value="T&lt;=1 ? H2|Q_ : H2|_Q"/>
+			<Key at="0x65" value="T&lt;=1 ? H2|D_ : H2|_D"/>
+			<Key at="0x66" value="T&lt;=1 ? H2|R_ : H2|_R"/>
+			<Key at="0x67" value="T&lt;=1 ? H2|H_ : H2|_H"/>
+			<Key at="0x68" value="H2|O_"/>
+			<Key at="0x69" value="T!=2 ? H2|YA : T&lt;=1 ? H2|SS : H2|_SS"/>
+			<Key at="0x6A" value="T!=2 || E==43 ? H2|EO : H3|_NH"/>
+			<Key at="0x6B" value="T!=2 || E==21 ? H2|A_ : H3|_BS"/>
+			<Key at="0x6C" value="T!=2 || E==21 || E==43 || E==64 ? H2|I_ : H3|_RG"/>
+			<Key at="0x6D" value="H2|EU"/>
+			<Key at="0x6E" value="H2|U_"/>
+			<Key at="0x6F" value="H2|AE"/>
+			<Key at="0x70" value="H2|E_"/>
+			<Key at="0x71" value="T&lt;=1 ? H2|B_ : H2|_B"/>
+			<Key at="0x72" value="T&lt;=1 ? H2|G_ : H2|_G"/>
+			<Key at="0x73" value="T&lt;=1 ? H2|N_ : H2|_N"/>
+			<Key at="0x74" value="T&lt;=1 ? H2|S_ : H2|_S"/>
+			<Key at="0x75" value="H2|YEO"/>
+			<Key at="0x76" value="T&lt;=1 ? H2|P_ : H2|_P"/>
+			<Key at="0x77" value="T&lt;=1 ? H2|J_ : H2|_J"/>
+			<Key at="0x78" value="T&lt;=1 ? H2|T_ : H2|_T"/>
+			<Key at="0x79" value="H2|YO"/>
+			<Key at="0x7A" value="T&lt;=1 ? H2|K_ : H2|_K"/>
+			<Key at="0x7B" value="0x7B"/>
+			<Key at="0x7C" value="0x7C"/>
+			<Key at="0x7D" value="0x7D"/>
+			<Key at="0x7E" value="0x7E"/>
+		</KeyTable>
+		<KeyProgramTable/>
+	</InputSchemeSetting>
+	<GeneratorSetting flag="0" object="CNgsImeEx" flagex="0">
+		<UnitMixTable>
+			<UnitMix unit="CHO" a="G_" b="500" to="GG"/>
+			<UnitMix unit="CHO" a="D_" b="500" to="DD"/>
+			<UnitMix unit="CHO" a="B_" b="500" to="BB"/>
+			<UnitMix unit="CHO" a="S_" b="500" to="SS"/>
+			<UnitMix unit="CHO" a="J_" b="500" to="J_"/>
+			<UnitMix unit="JUNG" a="A_" b="O_" to="WA"/>
+			<UnitMix unit="JUNG" a="AE" b="O_" to="WAE"/>
+			<UnitMix unit="JUNG" a="AE" b="501" to="YAE"/>
+			<UnitMix unit="JUNG" a="EO" b="U_" to="UEO"/>
+			<UnitMix unit="JUNG" a="E_" b="U_" to="WE"/>
+			<UnitMix unit="JUNG" a="E_" b="501" to="YE"/>
+			<UnitMix unit="JUNG" a="O_" b="A_" to="WA"/>
+			<UnitMix unit="JUNG" a="O_" b="AE" to="WAE"/>
+			<UnitMix unit="JUNG" a="O_" b="I_" to="OI"/>
+			<UnitMix unit="JUNG" a="U_" b="EO" to="UEO"/>
+			<UnitMix unit="JUNG" a="U_" b="E_" to="WE"/>
+			<UnitMix unit="JUNG" a="U_" b="I_" to="WI"/>
+			<UnitMix unit="JUNG" a="EU" b="I_" to="EUI"/>
+			<UnitMix unit="JUNG" a="I_" b="O_" to="OI"/>
+			<UnitMix unit="JUNG" a="I_" b="U_" to="WI"/>
+			<UnitMix unit="JUNG" a="I_" b="EU" to="EUI"/>
+			<UnitMix unit="JONG" a="G_" b="R_" to="RG"/>
+			<UnitMix unit="JONG" a="G_" b="S_" to="GS"/>
+			<UnitMix unit="JONG" a="N_" b="J_" to="NJ"/>
+			<UnitMix unit="JONG" a="N_" b="H_" to="NH"/>
+			<UnitMix unit="JONG" a="R_" b="G_" to="RG"/>
+			<UnitMix unit="JONG" a="R_" b="M_" to="RM"/>
+			<UnitMix unit="JONG" a="R_" b="B_" to="RB"/>
+			<UnitMix unit="JONG" a="R_" b="S_" to="RS"/>
+			<UnitMix unit="JONG" a="R_" b="T_" to="RT"/>
+			<UnitMix unit="JONG" a="R_" b="P_" to="RP"/>
+			<UnitMix unit="JONG" a="R_" b="H_" to="RH"/>
+			<UnitMix unit="JONG" a="M_" b="R_" to="RM"/>
+			<UnitMix unit="JONG" a="B_" b="R_" to="RB"/>
+			<UnitMix unit="JONG" a="B_" b="S_" to="BS"/>
+			<UnitMix unit="JONG" a="S_" b="G_" to="GS"/>
+			<UnitMix unit="JONG" a="S_" b="R_" to="RS"/>
+			<UnitMix unit="JONG" a="S_" b="B_" to="BS"/>
+			<UnitMix unit="JONG" a="J_" b="N_" to="NJ"/>
+			<UnitMix unit="JONG" a="T_" b="R_" to="RT"/>
+			<UnitMix unit="JONG" a="P_" b="R_" to="RP"/>
+			<UnitMix unit="JONG" a="H_" b="N_" to="NH"/>
+			<UnitMix unit="JONG" a="H_" b="R_" to="RH"/>
+		</UnitMixTable>
+		<VirtualUnitTable/>
+		<UnitAbbrTable/>
+		<AutomataTable default="0">
+			<Automata state="0" value="A|B ? 1 : C ? 3 : 0" default="0" remark="초기 상태"/>
+			<Automata state="1" value="C ? 3 : A|B ? D|A&amp;&amp;E|B ? 2 : 1 : 0" default="0" remark="초성 또는 중성 하나만 있는 경우"/>
+			<Automata state="2" value="B ? 2 : C ? 3 : 0" default="0" remark="초성 + 중성. 중성 결합만 허용"/>
+			<Automata state="3" value="C ? 3 : 0" default="0" remark="초성 + 중성 + 종성"/>
+		</AutomataTable>
+		<Extra>
+			<Bksp key="1" value1="0" value2="BySyllable" condition1="0" condition2="0"/>
+			<Bksp key="2" value1="BySyllable" value2="ByUnitStep" condition1="0" condition2="0"/>
+			<Bksp key="3" value1="0" value2="0" condition1="0" condition2="0"/>
+			<Bksp key="4" value1="0" value2="0" condition1="0" condition2="0"/>
+		</Extra>
+		<UserCompoTable/>
+		<UserCandiTable/>
+		<UserKeyTable doobeolchk="T&lt;=1"/>
+		<HanSubstTable numeric=""/>
+		<UnitSubstTable/>
+	</GeneratorSetting>
+</InputEntry>

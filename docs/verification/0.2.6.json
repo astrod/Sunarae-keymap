@@ -1,0 +1,22 @@
+{
+  "version": "0.2.6",
+  "build": 10,
+  "native_checks": 13076,
+  "native_failures": 0,
+  "before_repeat_fix_failures": 234,
+  "editor_checks": 16,
+  "editor_failures": 0,
+  "editor_scope": "isolated WKWebView CodeMirror commands/events; not full system IME keystrokes",
+  "native_scope": "real NSTextView with InputSession; explicit undo groups and separate named pasteboard",
+  "self_check": {
+    "composition_ok": true,
+    "network_blocked": true
+  },
+  "installed_diagnostic": false,
+  "installed_matches_build": true,
+  "sha256": "8163782b3b838a9229b95ea8419a7905a4cb1001d9414030f3801c830e2ec324",
+  "latency_sample_count": 338,
+  "latency_app_user_report": "ChatGPT, desktop/browser unspecified",
+  "latency_finished": true,
+  "backup": "build/backups/0.2.5"
+}

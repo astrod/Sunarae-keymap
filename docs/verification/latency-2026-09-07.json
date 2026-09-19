@@ -1,0 +1,111 @@
+{
+  "all_handlers" : {
+    "count" : 144,
+    "max_ms" : 18.825749999999999,
+    "mean_ms" : 4.5567051736111122,
+    "over_16_7_ms" : 4,
+    "over_33_3_ms" : 0,
+    "over_50_ms" : 0,
+    "p50_ms" : 3.2752500000000002,
+    "p95_ms" : 15.093541,
+    "p99_ms" : 18.738042
+  },
+  "client_calls_per_handler" : {
+    "count" : 144,
+    "max_ms" : 18.791250000000002,
+    "mean_ms" : 4.5303961180555561,
+    "over_16_7_ms" : 4,
+    "over_33_3_ms" : 0,
+    "over_50_ms" : 0,
+    "p50_ms" : 3.2422499999999999,
+    "p95_ms" : 15.061792000000001,
+    "p99_ms" : 18.467041000000002
+  },
+  "duration_seconds" : 120.004203,
+  "finished" : true,
+  "handlers_with_text_write" : {
+    "count" : 96,
+    "max_ms" : 18.825749999999999,
+    "mean_ms" : 6.6599453645833337,
+    "over_16_7_ms" : 4,
+    "over_33_3_ms" : 0,
+    "over_50_ms" : 0,
+    "p50_ms" : 4.2722499999999997,
+    "p95_ms" : 15.884124999999999,
+    "p99_ms" : 18.825749999999999
+  },
+  "input_content_recorded" : false,
+  "instrumentation_included" : true,
+  "run" : "2026-09-07",
+  "scope" : "IME key handler and synchronous client API call durations; excludes physical keyboard, pre-handler delivery, async renderer work and screen presentation",
+  "stages_per_participating_handler" : {
+    "capability" : {
+      "call_count" : 26,
+      "count" : 26,
+      "max_ms" : 0.26541599999999999,
+      "mean_ms" : 0.19155119230769233,
+      "over_16_7_ms" : 0,
+      "over_33_3_ms" : 0,
+      "over_50_ms" : 0,
+      "p50_ms" : 0.19379099999999999,
+      "p95_ms" : 0.25554199999999999,
+      "p99_ms" : 0.26541599999999999
+    },
+    "composition" : {
+      "call_count" : 137,
+      "count" : 137,
+      "max_ms" : 0.11737499999999999,
+      "mean_ms" : 0.0060163649635036481,
+      "over_16_7_ms" : 0,
+      "over_33_3_ms" : 0,
+      "over_50_ms" : 0,
+      "p50_ms" : 0.003042,
+      "p95_ms" : 0.014333,
+      "p99_ms" : 0.088041999999999995
+    },
+    "insertion" : {
+      "call_count" : 96,
+      "count" : 96,
+      "max_ms" : 18.111750000000001,
+      "mean_ms" : 4.9404253229166688,
+      "over_16_7_ms" : 3,
+      "over_33_3_ms" : 0,
+      "over_50_ms" : 0,
+      "p50_ms" : 1.6679580000000001,
+      "p95_ms" : 14.9625,
+      "p99_ms" : 18.111750000000001
+    },
+    "markedQuery" : {
+      "call_count" : 0,
+      "count" : 0
+    },
+    "marking" : {
+      "call_count" : 0,
+      "count" : 0
+    },
+    "selection" : {
+      "call_count" : 107,
+      "count" : 100,
+      "max_ms" : 2.555625,
+      "mean_ms" : 0.39272044000000006,
+      "over_16_7_ms" : 0,
+      "over_33_3_ms" : 0,
+      "over_50_ms" : 0,
+      "p50_ms" : 0.3175,
+      "p95_ms" : 0.73916599999999999,
+      "p99_ms" : 1.9182090000000001
+    },
+    "substring" : {
+      "call_count" : 73,
+      "count" : 73,
+      "max_ms" : 9.7859580000000008,
+      "mean_ms" : 1.8334771917808226,
+      "over_16_7_ms" : 0,
+      "over_33_3_ms" : 0,
+      "over_50_ms" : 0,
+      "p50_ms" : 0.652833,
+      "p95_ms" : 5.0705419999999997,
+      "p99_ms" : 9.7859580000000008
+    }
+  }
+}

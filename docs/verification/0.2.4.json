@@ -1,0 +1,13 @@
+{
+  "version": "0.2.4",
+  "build": 8,
+  "alternate_shift_key": ",",
+  "literal_comma_after_transform": "second consecutive comma restores original composition and appends one comma",
+  "timing_window_ms": null,
+  "regression": { "checks": 12736, "failures": 0 },
+  "self_check": { "composition_ok": true, "network_blocked": true },
+  "installed": true,
+  "input_source_restored": "local.inputmethod.Dukkeobi",
+  "physical_key_end_to_end_verified": false,
+  "fatigue_reduction_measured": false
+}

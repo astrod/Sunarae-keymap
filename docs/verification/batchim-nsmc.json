@@ -1,0 +1,70 @@
+{
+  "source": "https://raw.githubusercontent.com/e9t/nsmc/cc0670e872d4ac27bfe36c87456783004b39ef6c/ratings.txt",
+  "sha256": "7d1d8e66323eb5a64feb2e299178f58827d8302111c434195dfeef48506e1256",
+  "method": "NFC-normalized document column only; written syllable occurrences; no spelling correction or deduplication",
+  "reviews": 200000,
+  "empty_reviews": 8,
+  "hangul_syllables": 5041160,
+  "compound_final_occurrences": 57859,
+  "compound_finals": [
+    {
+      "final": "ㅄ",
+      "count": 31024,
+      "percent_of_compound_finals": 53.62
+    },
+    {
+      "final": "ㄶ",
+      "count": 20148,
+      "percent_of_compound_finals": 34.8226
+    },
+    {
+      "final": "ㅀ",
+      "count": 2005,
+      "percent_of_compound_finals": 3.4653
+    },
+    {
+      "final": "ㄻ",
+      "count": 1985,
+      "percent_of_compound_finals": 3.4308
+    },
+    {
+      "final": "ㄺ",
+      "count": 1723,
+      "percent_of_compound_finals": 2.9779
+    },
+    {
+      "final": "ㄼ",
+      "count": 562,
+      "percent_of_compound_finals": 0.9713
+    },
+    {
+      "final": "ㄵ",
+      "count": 207,
+      "percent_of_compound_finals": 0.3578
+    },
+    {
+      "final": "ㄳ",
+      "count": 143,
+      "percent_of_compound_finals": 0.2472
+    },
+    {
+      "final": "ㄾ",
+      "count": 39,
+      "percent_of_compound_finals": 0.0674
+    },
+    {
+      "final": "ㄿ",
+      "count": 21,
+      "percent_of_compound_finals": 0.0363
+    },
+    {
+      "final": "ㄽ",
+      "count": 2,
+      "percent_of_compound_finals": 0.0035
+    }
+  ],
+  "separate_double_consonant_finals": {
+    "ㄲ": 3201,
+    "ㅆ": 127910
+  }
+}

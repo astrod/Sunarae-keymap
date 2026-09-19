@@ -1,0 +1,5 @@
+module CLibHangul {
+    header "hangul.h"
+    header "sunarae.h"
+    export *
+}

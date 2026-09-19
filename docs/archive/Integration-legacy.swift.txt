@@ -1,0 +1,76 @@
+import AppKit
+import Carbon
+
+// Optional end-to-end check. Requires a manually selected input source. Uses a fresh
+// local text window, restores the prior input source and frontmost app on exit.
+func pump(_ duration: TimeInterval) {
+    let deadline = Date().addingTimeInterval(duration)
+    while Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.01)) }
+}
+func source(_ id: String) -> TISInputSource? {
+    guard let list = TISCreateInputSourceList([kTISPropertyInputSourceID as String: id] as CFDictionary, true) else { return nil }
+    return (list.takeRetainedValue() as? [TISInputSource])?.first
+}
+let previousSource = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
+let previousApp = NSWorkspace.shared.frontmostApplication
+guard let sourceID = TISGetInputSourceProperty(previousSource, kTISPropertyInputSourceID),
+      Unmanaged<CFString>.fromOpaque(sourceID).takeUnretainedValue() as String == "local.inputmethod.Dukkeobi",
+      let abc = source("com.apple.keylayout.ABC") else {
+    fputs("Select dukkeobi yourself and approve any macOS prompt before running this test.\n", stderr)
+    exit(1)
+}
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)
+app.finishLaunching()
+let window = NSWindow(contentRect: NSRect(x: 150, y: 200, width: 620, height: 200),
+                      styleMask: [.titled, .closable], backing: .buffered, defer: false)
+window.title = "dukkeobi input test"
+let view = NSTextView(frame: NSRect(x: 0, y: 0, width: 620, height: 200))
+view.font = .systemFont(ofSize: 22)
+window.contentView = view
+window.makeKeyAndOrderFront(nil)
+window.makeFirstResponder(view)
+app.activate(ignoringOtherApps: true)
+pump(0.3)
+var failures = 0
+defer {
+    _ = TISSelectInputSource(previousSource)
+    pump(0.2)
+    window.orderOut(nil)
+    previousApp?.activate()
+}
+pump(0.7)
+
+func key(_ code: UInt16, _ characters: String, _ modifiers: NSEvent.ModifierFlags = []) {
+    let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: modifiers,
+                                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                                context: nil, characters: characters, charactersIgnoringModifiers: characters,
+                                isARepeat: false, keyCode: code)!
+    view.keyDown(with: event)
+    pump(0.055)
+}
+let positions: [Character: UInt16] = ["a":0, "s":1, "d":2, "f":3, "h":4, "g":5, "z":6, "x":7, "c":8,
+    "v":9, "b":11, "q":12, "w":13, "e":14, "r":15, "y":16, "t":17, "o":31, "u":32,
+    "i":34, "p":35, "l":37, "j":38, "k":40, ";":41, ",":43, "n":45, "m":46, " ":49]
+func type(_ text: String) { for character in text { key(positions[character]!, String(character)) } }
+func check(_ expected: String, _ name: String) {
+    if view.string == expected { print("PASS \(name)") }
+    else { failures += 1; print("FAIL \(name): [\(view.string)] expected [\(expected)]") }
+}
+type("akl dli djk dkj r,k ro,")
+pump(0.3)
+check("맑 있 없 않 까 걔", "system input-method composition")
+key(51, "\u{7f}")
+check("맑 있 없 않 까 개", "system Backspace")
+key(36, "\r")
+check("맑 있 없 않 까 개\n", "system Return")
+type("rk")
+_ = TISSelectInputSource(abc)
+pump(0.3)
+check("맑 있 없 않 까 개\n가", "input-source switch commits composition")
+// exit() skips Swift defer, so explicitly restore before exiting.
+_ = TISSelectInputSource(previousSource)
+pump(0.2)
+window.orderOut(nil)
+previousApp?.activate()
+exit(failures == 0 ? 0 : 1)

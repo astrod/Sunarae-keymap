@@ -1,0 +1,17 @@
+{
+  "name": "sunarae-web-input-probe",
+  "private": true,
+  "dependencies": {
+    "@codemirror/view": "6.41.0",
+    "@codemirror/state": "6.6.0",
+    "@codemirror/lang-markdown": "6.5.0",
+    "@replit/codemirror-vim": "6.3.0",
+    "esbuild": "0.27.3",
+    "@codemirror/commands": "6.10.3"
+  },
+  "overrides": {
+    "@codemirror/state": "$@codemirror/state",
+    "@codemirror/view": "$@codemirror/view",
+    "@codemirror/lint": "6.9.5"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.2.2",
+  "build": 6,
+  "regression": {
+    "kind": "simulated stale selection with real NSTextView adapter",
+    "before_fix_failures": 2,
+    "after_fix_checks": 11921,
+    "after_fix_failures": 0
+  },
+  "self_check": {
+    "composition_ok": true,
+    "network_blocked": true,
+    "errno": 1
+  },
+  "codesign_verified": true,
+  "installed": true,
+  "user_confirmation": {
+    "SilverBullet_0_2_1": "working",
+    "Codex_and_TypingWorks_0_2_2": "pending"
+  },
+  "limitations": [
+    "The real intermittent browser failure has not been automatically reproduced.",
+    "Codex UI control is disallowed by the computer-use tool."
+  ]
+}

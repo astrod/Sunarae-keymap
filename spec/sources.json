@@ -1,0 +1,11 @@
+{
+  "libhangul": {
+    "repository": "https://github.com/libhangul/libhangul.git",
+    "revision": "a34aef73378c0992316861bbf13fc914ee7577d9"
+  },
+  "sunarae": {
+    "repository": "https://github.com/3beol/libhangul.git",
+    "revision": "5244cb30b0f995ff2567ab2ac51dba3e9958a0d2",
+    "keyboard": "2noshift"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "libhangul": {
+    "repository": "https://github.com/libhangul/libhangul.git",
+    "revision": "a34aef73378c0992316861bbf13fc914ee7577d9"
+  },
+  "dugyeob": {
+    "repository": "https://github.com/Sinseiki/Dugyeob-e_keyboard.git",
+    "revision": "78191b3480c9159c046cd02148783aa243fde646"
+  }
+}

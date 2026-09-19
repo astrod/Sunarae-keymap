@@ -1,0 +1,13 @@
+{
+  "version": "0.2.5",
+  "build": 9,
+  "initial_regression": { "checks": 12782, "failures_before_fix": 34 },
+  "final_regression": { "checks": 12801, "failures": 0 },
+  "composer_unchanged": true,
+  "input_controller_unchanged": true,
+  "self_check": { "composition_ok": true, "network_blocked": true },
+  "installed": true,
+  "input_source_restored": "local.inputmethod.Dukkeobi",
+  "runtime_latency_remeasured": false,
+  "call_count_report": "0.2.5-call-counts.json"
+}

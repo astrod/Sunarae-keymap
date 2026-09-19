@@ -1,0 +1,25 @@
+{
+  "version": "0.2.1",
+  "date": "2026-09-06",
+  "appkit_regression": {
+    "before_failures": 69,
+    "after_checks": 11914,
+    "after_failures": 0
+  },
+  "webkit_editor_regression": [
+    {
+      "useVim": false,
+      "text": "- 어렵다\n- ",
+      "prevented": true,
+      "passed": true
+    },
+    {
+      "useVim": true,
+      "text": "- 어렵다\n- ",
+      "prevented": true,
+      "passed": true
+    }
+  ],
+  "system_input_and_installed_silverbullet": "pending physical-keyboard verification",
+  "automatic_input_limitation": "probe application inactive; ASCII input is not an IME pass"
+}
