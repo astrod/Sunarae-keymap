@@ -1,4 +1,4 @@
-# Sunarae 0.4.0 architecture
+# Sunarae 0.4.1 architecture
 
 The application keeps the registered input-source ID `local.inputmethod.Dukkeobi` for upgrades, while the app path, executable, controller class, visible name and icon now use Sunarae / 두벌식 순아래. The source directory remains `dukkeobi` so existing workspace paths stay valid.
 

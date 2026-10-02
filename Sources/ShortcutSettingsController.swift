@@ -63,7 +63,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         }
         candidate = manager.savedShortcut
         value.stringValue = candidate?.displayName ?? "사용 안 함"
-        message.stringValue = "F18을 이미 다른 도구에서 쓰고 있다면 그 설정을 먼저 해제하세요. 설정은 ‘적용’을 눌러야 저장돼요."
+        message.stringValue = "설정은 ‘적용’을 눌러야 저장돼요. 다른 도구에서 같은 키를 쓰고 있다면 기존 설정을 해제해 주세요."
         previousApp = NSWorkspace.shared.frontmostApplication
         NSApp.setActivationPolicy(.accessory)
         window.center()
