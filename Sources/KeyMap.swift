@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 extension Character {
     var isASCIIHangulKey: Bool {
@@ -9,6 +9,12 @@ extension Character {
 
 /// Converts physical keys to the standard two-set QWERTY positions.
 enum KeyMap {
+    static func isEscapeShortcut(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> Bool {
+        let shortcutFlags = modifiers.intersection([.shift, .control, .option, .command])
+        return (keyCode == 53 && shortcutFlags.isEmpty)
+            || (keyCode == 33 && shortcutFlags == .control)
+    }
+
     // macOS virtual key codes denote positions for built-in, USB and Bluetooth
     // keyboards alike. Shift is intentional; Caps Lock alone does not make jamo tense.
     static let positions: [UInt16: Character] = [

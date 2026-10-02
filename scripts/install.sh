@@ -67,3 +67,4 @@ moved_new=true
 "$source_tool" "$registration_mode" "$installed_app"
 registered=true
 echo "설치 위치: $installed_app"
+echo '업데이트 후 순아래에서 영문이 나오면 작성 중인 내용을 보관하고 해당 앱을 완전히 종료한 뒤 다시 열어 주세요.'

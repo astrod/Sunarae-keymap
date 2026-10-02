@@ -6,6 +6,11 @@ final class InputSession {
     let composer = Composer()
     private let delivery = TextDelivery()
     private var processing = false
+    private let settings: InputSettings
+
+    init(settings: InputSettings = .shared) {
+        self.settings = settings
+    }
 
     var markedText: String { delivery.isMarked ? composer.preedit : "" }
 
@@ -33,10 +38,20 @@ final class InputSession {
 
     // Key repeats use the same composition rules as separate key presses.
     func input(keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
-               client: TextClient) -> Bool {
+               client: TextClient, selectABC: () -> Bool = { false }) -> Bool {
         guard !processing else { return false }
         processing = true
         defer { processing = false }
+        if KeyMap.isEscapeShortcut(keyCode: keyCode, modifiers: modifiers),
+           settings.switchToABCOnEscape {
+            // Finish before TIS can reenter deactivateServer. The original
+            // Escape still reaches the editor. Do not keep an English mode:
+            // every later key delivered to this session can compose Korean,
+            // even if IMK reuses it without an activation callback.
+            finish(to: client)
+            _ = selectABC()
+            return false
+        }
         if !modifiers.intersection([.command, .control, .option]).isEmpty {
             finish(to: client)
             return false

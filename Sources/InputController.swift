@@ -33,6 +33,21 @@ private final class IMKClient: TextClient {
 final class InputController: IMKInputController {
     private let session = InputSession()
 
+    override func menu() -> NSMenu! {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let item = NSMenuItem(title: "Esc / Ctrl+[ 누르면 ABC로 전환",
+                              action: #selector(toggleEscapeSwitch(_:)), keyEquivalent: "")
+        item.state = InputSettings.shared.switchToABCOnEscape ? .on : .off
+        menu.addItem(item)
+        return menu
+    }
+
+    // IMK routes menu actions to the controller with a command dictionary.
+    @objc func toggleEscapeSwitch(_ sender: Any?) {
+        InputSettings.shared.switchToABCOnEscape.toggle()
+    }
+
     override func recognizedEvents(_ sender: Any!) -> Int {
         Int(NSEvent.EventTypeMask([.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]).rawValue)
     }
@@ -41,7 +56,7 @@ final class InputController: IMKInputController {
         guard let client = sender as? IMKTextInput else { return false }
         if event.type == .keyDown {
             return session.input(keyCode: event.keyCode, modifiers: event.modifierFlags,
-                                 client: IMKClient(client))
+                                 client: IMKClient(client), selectABC: InputSource.selectABC)
         }
         // With direct output there may be no marked text for InputMethodKit's
         // default mouse handling to commit. End our local state on clicks too.
@@ -52,7 +67,7 @@ final class InputController: IMKInputController {
     override func activateServer(_ sender: Any!) {
         super.activateServer(sender)
         // Preserve familiar QWERTY Command shortcuts while Korean is active.
-        (sender as? IMKTextInput)?.overrideKeyboard(withKeyboardNamed: "com.apple.keylayout.ABC")
+        (sender as? IMKTextInput)?.overrideKeyboard(withKeyboardNamed: InputSource.abcID)
     }
 
     override func commitComposition(_ sender: Any!) {

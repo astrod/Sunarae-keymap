@@ -10,7 +10,8 @@ const report = document.getElementById('report');
 const send = row => {
   row.time = performance.now();
   records.push(row); report.value = JSON.stringify(records, null, 1);
-  window.webkit.messageHandlers.trace.postMessage(row);
+  // Also keep this fixed-sample page usable in Chrome, outside the WK probe.
+  window.webkit?.messageHandlers?.trace?.postMessage(row);
 };
 function state(current = view) {
   return {text: current.state.doc.toString(), composing: current.composing,

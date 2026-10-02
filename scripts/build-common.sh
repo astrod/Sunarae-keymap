@@ -7,9 +7,9 @@ minimum_macos="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' Reso
 target_arch="$(uname -m)"
 swift_target="$target_arch-apple-macosx$minimum_macos"
 library="$build_dir/libhangul.a"
-core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/TextClient.swift
+core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/InputSettings.swift Sources/TextClient.swift
               Sources/TextDelivery.swift Sources/InputSession.swift)
-check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/SunaraeChecks.swift
+check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
                Tests/EditingChecks.swift Tests/main.swift)
 swift_flags=(-swift-version 5 -target "$swift_target" -I vendor/libhangul "$library")
 

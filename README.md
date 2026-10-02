@@ -36,12 +36,29 @@ Backspace는 현재 글자의 마지막 입력을 되돌립니다. `까(rkk)→�
 기존 두꺼비의 I/J/K/L/U 겹받침 단축키, 역순 결합, 쉼표 대체 시프트는 제거했습니다.
 쉼표와 세미콜론은 일반 문장부호로 입력합니다. 모아치기·한자 변환·약어 기능은 없습니다.
 
+### Esc로 ABC 전환
+
+순아래를 선택한 상태에서 macOS 입력 메뉴의 **Esc / Ctrl+[ 누르면 ABC로 전환**을 체크하면 켜집니다.
+기본값은 꺼짐이며, 설정은 앱을 다시 시작해도 유지합니다. 같은 항목을 다시 누르면 꺼집니다.
+
+켜 두면 `Esc` 또는 `Ctrl+[`를 누를 때 현재 글자를 확정하고 macOS에 ABC 전환을 요청합니다.
+원래 키는 앱에 넘기므로 Vim의 일반 모드 전환에도 사용합니다.
+한글로 돌아갈 때는 기존 한영 전환 키를 사용합니다. 별도의 내부 영문 모드나 한영 전환 키 설정은 없습니다.
+
+Vim 여부와 관계없이 순아래가 키를 받는 모든 앱에 적용합니다. 팝업을 닫는 Esc도 ABC 전환을 요청합니다.
+Shift·Option·Command 등을 함께 누른 다른 단축키는 그대로 둡니다.
+ABC가 입력 소스 목록에 없거나 전환 요청에 실패하면 한글 입력을 계속할 수 있고 원래 키도 앱에 넘깁니다.
+0.3.1에서 사용한 전환 후 키 통과 상태는 제거했습니다. 실제 전환 시점은 macOS와 입력창이 처리합니다.
+
 ## 설치·업데이트·삭제
 
 1. `dist/Install.command`를 실행합니다. 업데이트 전에는 ABC나 다른 입력기를 선택합니다.
 2. 앱은 `~/Library/Input Methods/Sunarae.app`에 설치됩니다. 이전 `Dukkeobi.app`은 교체합니다.
 3. 입력 메뉴에서 **두벌식 순아래**를 선택합니다.
 4. 처음 설치해 목록에 없다면 시스템 설정 → 키보드 → 텍스트 입력 → 편집에서 추가합니다. macOS의 사용 승인 요청은 직접 확인합니다. 처음 등록할 때는 로그아웃 후 다시 로그인해야 할 수 있습니다.
+
+업데이트 직후 순아래를 선택해도 영문이 나온다면, 작성 중인 내용을 보관하고 해당 앱을 `⌘Q`로 완전히 종료한 뒤 다시 엽니다.
+입력기를 교체하기 전 연결이 앱에 남을 수 있어, 파일 설치와 실제 입력 확인을 따로 해야 합니다.
 
 기존 입력 소스를 이어 쓰도록 내부 등록 ID `local.inputmethod.Dukkeobi`는 유지합니다.
 설치 도구는 바뀐 실행 경로를 Launch Services와 TIS에 등록하며, 사용 중인 입력기를 자동으로 바꾸지 않습니다.
@@ -107,6 +124,7 @@ make web-probe   # 시험창 + CodeMirror 빌드
 - `Sources/Composer.swift`: 순아래 조합 엔진과 한 키씩 되돌리기.
 - `Sources/KeyMap.swift`: macOS 키 위치와 Shift 해석.
 - `Sources/InputSession.swift`: 키 처리, 확정, 중첩 호출 방지.
+- `Sources/InputSettings.swift`, `Sources/InputSource.swift`: Esc 전환 설정과 macOS ABC 선택 요청.
 - `Sources/TextDelivery.swift`: 커서·문자 확인, 직접 삽입·교체·삭제, 조합 표시 방식으로 전환.
 - `Sources/TextClient.swift`, `Sources/InputController.swift`: 앱의 텍스트 API와 InputMethodKit 연결.
 - `vendor/libhangul/`: 고정한 한글 엔진과 순아래 변경 사항.

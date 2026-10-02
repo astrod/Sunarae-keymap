@@ -1,4 +1,4 @@
-# Sunarae 0.3.0 architecture
+# Sunarae 0.3.2 architecture
 
 The application keeps the registered input-source ID `local.inputmethod.Dukkeobi` for upgrades, while the app path, executable, controller class, visible name and icon now use Sunarae / 두벌식 순아래. The source directory remains `dukkeobi` so existing workspace paths stay valid.
 
@@ -8,10 +8,16 @@ The application keeps the registered input-source ID `local.inputmethod.Dukkeobi
 
 The ordered-deletion behavior from 0.2.9 stays in `TextDelivery.removeLast`. The IMK adapter deletes a verified owned range through an empty `setMarkedText` replacement. This prevents the last native Backspace from reaching a web editor after the next IMK insertion. Deleting previous app-owned content still belongs to the app. Clients without document access use marked text as before.
 
+`InputSettings` stores an opt-in Boolean for bare Escape / Control-[ to select ABC. `InputSession` finishes composition, calls the source-selection callback while its reentrancy guard is active, then passes the original event to the client. `InputSource` selects an already enabled ABC through TIS; it never enables or registers a source. The sandbox permits only the local `com.apple.tsm.portname` lookup needed to notify the focused editor. No network, Accessibility or Input Monitoring access is added.
+
+Unlike the withdrawn 0.3.1, there is no pass-through latch, internal English mode, or current-source query in key handling. A later key delivered to the same session can compose Korean without waiting for an activation callback. This avoids making an input-source cache query a condition for Korean input. It does not impose ordering on events already queued by another process; rapid exit-and-command sequences still need live checks.
+
 The C vendor contains only the former upstream base plus the Sunarae table, repeated-vowel branch, and one snapshot helper. The old direct-final and reverse-order patches are gone. The reference data and engine source revisions are pinned in `spec/sources.json`; normal builds are offline.
 
 Installation stages a signed bundle, checks the old bundle identity, stops only the exact old executable, moves the bundle, and registers its new location with Launch Services before TIS. Registration failures restore the previous bundle path. Successful registration with an empty source list keeps the new bundle and explains how to add it after logging in again. This pending state is a successful helper exit, so installation does not roll it back. The helper reads enabled state again after enabling a source. It does not change the selected input source or grant macOS input-method approval.
 
 The installer aborts before moving bundles if the current-source query fails or returns an empty/unknown identifier. The registration helper also refuses to disable sources when it cannot identify the current source. `Diagnose.command` reads build/installed versions, verifies signatures, and queries source state without executing the input method or changing registration. It does not read typed text, documents, or the clipboard.
+
+After replacing an input method, open client apps can retain a broken connection even when registration and the new server look healthy. The 0.3.1 rollback recovered in the probe before Codex/Chrome recovered after restart. Do not report installation or a probe result as proof that an existing client works; verify it after reconnecting or restarting that client.
 
 Builds prepare the entire distribution in a temporary directory beside `dist`. They compile and verify both the input method and registration helper before replacing `dist`. Publication failure restores the previous directory; failed restoration preserves the backup and reports its path. Each successful build starts with an empty distribution, so removed resources do not survive in later builds. Packaging checks use isolated directories and stub registration, never the user's real input-source settings.
