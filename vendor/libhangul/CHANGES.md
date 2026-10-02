@@ -3,6 +3,8 @@
 Base: libhangul `a34aef73378c0992316861bbf13fc914ee7577d9`.
 Sunarae reference: 3beol/libhangul `5244cb30b0f995ff2567ab2ac51dba3e9958a0d2`, keyboard `2noshift`.
 
+The local changes below were recorded in the Sunarae baseline on 2026-09-20 (`7e51efc`). On 2026-10-03, explicit local-change notices were added to the two modified upstream C files for source publication. These changes retain LGPL-2.1-or-later.
+
 - `hangulkeyboard.c`: register a static `2noshift` keyboard using the standard two-set mapping.
 - `sunarae-combinations.h`: generated from `spec/sunarae.json`. Its 22 combinations and five initial replacements come from `hangul_combination_table_default_2` and `hangul_replace_table_2_noshift` in the reference's `hangulkeyboard.h`. The `(0, initial)` entries let the existing combination lookup handle initial replacement without adding the fork's unrelated keyboard machinery.
 - `hangulinputcontext.c`: port the reference's repeated-vowel branch from `hangul_ic_process_jamo`: with no final and an initial present, a vowel equal to the stack's current entry may tense that initial. Other keyboards have no `(0, initial)` entry and stay unchanged.

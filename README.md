@@ -111,6 +111,11 @@ Esc와 Ctrl+[는 위의 ABC 전환 기능에 남겨 둡니다. 키 이름은 두
 Swift와 C(libhangul)를 사용합니다. Xcode Command Line Tools가 필요하며, 일반 빌드는 네트워크나 패키지 관리자를 쓰지 않습니다. 아래 명령은 소스 프로젝트의 루트 폴더에서 실행합니다.
 
 ```sh
+git clone https://github.com/astrod/Sunarae-keymap.git
+cd Sunarae-keymap
+```
+
+```sh
 make build    # 앱 빌드
 make test     # 조합·편집 검사
 make check    # 규칙 확인 + 빌드 + 조합·편집·설치 검사 + 앱 자체 검사
@@ -158,3 +163,14 @@ make web-probe   # 시험창 + CodeMirror 빌드
 순아래 제작자는 **꼬마집오리**입니다. [제작자 설명](https://sites.google.com/site/tinyduckn/dubeolsig-sun-alae),
 [구현 기준](https://github.com/3beol/libhangul/blob/5244cb30b0f995ff2567ab2ac51dba3e9958a0d2/data/keyboards_info/2set_2noshift.txt),
 [소스와 라이선스](THIRD_PARTY.md)를 참고하세요.
+
+## 라이선스
+
+직접 작성한 Swift 앱·스크립트·테스트 코드는 [MIT](LICENSE)입니다. 저작권과 라이선스 고지를 유지하면 수정·재배포·상업적 이용이 가능합니다.
+
+함께 포함한 파일에는 각 원본 라이선스가 적용됩니다.
+
+- libhangul, 수정한 한글 엔진, 순아래 규칙과 참고 자료: [LGPL-2.1-or-later](vendor/libhangul/COPYING).
+- 현재 앱에서 쓰지 않는 두겹이 보관 자료: [CC BY-SA 4.0](docs/archive/dugyeob-spec/LICENSE).
+
+앱은 libhangul을 정적으로 연결합니다. 이 프로젝트의 실행 파일은 해당 버전의 전체 앱·라이브러리 소스, 빌드 스크립트와 라이선스 고지를 함께 제공하는 방식으로 배포합니다. 수정한 라이브러리로 다시 빌드할 수 있도록 하기 위해서입니다. 자세한 출처와 배포 조건은 [THIRD_PARTY.md](THIRD_PARTY.md)에 정리했습니다.

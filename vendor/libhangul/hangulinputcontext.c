@@ -1,3 +1,7 @@
+/* Local Sunarae changes, recorded 2026-09-20: repeated-vowel initial
+ * replacement and a context snapshot helper. See CHANGES.md.
+ * This notice was added 2026-10-03. LGPL-2.1-or-later is unchanged.
+ */
 /* libhangul
  * Copyright (C) 2004 - 2016 Choe Hwanjin
  *

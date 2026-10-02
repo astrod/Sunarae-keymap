@@ -32,6 +32,7 @@ xcrun swift scripts/make-icons.swift "$stage_dir/icons"
 iconutil -c icns "$stage_dir/icons/Sunarae.iconset" -o "$app_dir/Contents/Resources/Sunarae.icns"
 cp "$stage_dir/icons/MenuIcon.tiff" "$app_dir/Contents/Resources/"
 cp vendor/libhangul/COPYING "$app_dir/Contents/Resources/libhangul-LICENSE"
+cp LICENSE "$app_dir/Contents/Resources/LICENSE"
 cp spec/sunarae.json spec/sunarae-reference.txt "$app_dir/Contents/Resources/"
 if [[ -f THIRD_PARTY.md ]]; then cp THIRD_PARTY.md "$app_dir/Contents/Resources/"; fi
 
@@ -48,7 +49,7 @@ cp scripts/install.sh scripts/uninstall.sh scripts/diagnose.sh "$artifact_dir/Su
 cp scripts/Install.command scripts/Uninstall.command scripts/Diagnose.command "$artifact_dir/"
 chmod +x "$artifact_dir/Support/"*.sh "$artifact_dir/"*.command
 if [[ -f README.md ]]; then cp README.md "$artifact_dir/README.md"; fi
-cp CONTRIBUTING.md THIRD_PARTY.md "$artifact_dir/"
+cp LICENSE CONTRIBUTING.md THIRD_PARTY.md "$artifact_dir/"
 mkdir -p "$artifact_dir/docs"
 cp docs/INPUT-VERIFICATION-*.md "$artifact_dir/docs/"
 cp docs/IMPLEMENTATION.md "$artifact_dir/docs/"

@@ -1,3 +1,7 @@
+/* Local Sunarae changes, recorded 2026-09-20: register the static 2noshift
+ * keyboard and its combination table. See CHANGES.md.
+ * This notice was added 2026-10-03. LGPL-2.1-or-later is unchanged.
+ */
 /* libhangul
  * Copyright (C) 2016 Choe Hwanjin
  *

@@ -167,7 +167,7 @@ echo "$SUNARAE_TEST_CURRENT"
             project.mkdir()
             for directory in ['Sources', 'Resources', 'scripts', 'vendor', 'spec', 'docs']:
                 shutil.copytree(ROOT / directory, project / directory)
-            for filename in ['README.md', 'CONTRIBUTING.md', 'THIRD_PARTY.md']:
+            for filename in ['LICENSE', 'README.md', 'CONTRIBUTING.md', 'THIRD_PARTY.md']:
                 shutil.copy2(ROOT / filename, project / filename)
             dist = project / 'dist'
             (dist / 'Sunarae.app/Contents/Resources').mkdir(parents=True)
@@ -203,6 +203,8 @@ exec /bin/mv "$@"
                         self.assertTrue(os.access(dist / 'Install.command', os.X_OK))
                         self.assertTrue(os.access(dist / 'Diagnose.command', os.X_OK))
                         self.assertTrue((dist / 'docs/IMPLEMENTATION.md').is_file())
+                        for license_path in ['LICENSE', 'Sunarae.app/Contents/Resources/LICENSE']:
+                            self.assertEqual((dist / license_path).read_bytes(), (project / 'LICENSE').read_bytes())
                         verified = run(['codesign', '--verify', '--deep', '--strict', str(dist / 'Sunarae.app')])
                         self.assertEqual(verified.returncode, 0, verified.stderr)
                     self.assertEqual(list(project.glob('.Sunarae-build.*')), [])
