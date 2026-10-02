@@ -3,7 +3,6 @@ import AppKit
 _ = NSApplication.shared
 for (keys, expected) in sunaraeExamples { expect(compose(keys), expected, keys) }
 runSessionChecks()
-runEscapeChecks()
 runSunaraeChecks()
 runEditingChecks()
 print("\(checks) checks, \(failures) failures")

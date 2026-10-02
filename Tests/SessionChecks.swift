@@ -5,6 +5,7 @@ func runSessionChecks() {
     // Marked text still needs its safety check before it can be committed.
     let finishingKeys: [(String, UInt16, NSEvent.ModifierFlags)] = [
         ("Enter", 36, []), ("Space", 49, []), ("Tab", 48, []),
+        ("Escape", 53, []), ("Control-[", 33, .control),
         ("Left", 123, []), ("Command-C", 8, .command),
         ("Control-Space", 49, .control), ("Option-R", 15, .option)
     ]
@@ -23,6 +24,9 @@ func runSessionChecks() {
             expect(String(client.insertCount - writes), direct ? "0" : "1", "commit writes \(label)")
             expect(client.view.string, "가", "preserve text \(label)")
             expect(String(session.composer.isEmpty), "true", "clear local state \(label)")
+            // IMK may reuse this session without another activation callback.
+            type("sk", session: session, client: client)
+            expect(client.view.string, "가나", "Korean continues in the same session \(label)")
         }
     }
     do {

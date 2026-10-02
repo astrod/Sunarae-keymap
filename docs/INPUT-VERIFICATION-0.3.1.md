@@ -1,42 +1,35 @@
-# 두벌식 순아래 0.3.1 (15) — 2026-10-02
+# 0.3.1 철회 — 2026-10-02
 
-## Change
+사용 중 순아래가 선택되어 있는데도 영문이 입력된다는 보고를 받아,
+Esc / Ctrl+[ → ABC 전환 기능을 제거하고 0.3.0 (14) 코드로 복구했다.
+이전의 제한된 시험창 결과만으로 이 기능의 안정성을 판단할 수 없었다.
 
-Added the input-menu preference **Esc / Ctrl+[ 누르면 ABC로 전환**. It defaults to off and persists as one Boolean. When enabled, bare Escape and Control-[ finish composition, request ABC, and pass the original event through. Other modifier combinations and the external F18 shortcut are unchanged. The option acts on received keys in all apps; it does not detect Vim modes or restore Korean on Insert mode entry.
+## 확인한 코드 경로
 
-Successful source selection also stops queued keys from entering the Korean composer. Selection of Sunarae resumes Korean even if a client reuses its old session without an activation callback. Failed selection leaves Korean usable.
+0.3.1은 ABC 전환 요청 뒤 `passingThroughToABC`를 켜고 한글 조합을 건너뛴다.
+활성화 알림이나 현재 입력기 조회 결과에 따라 이 상태를 해제한다.
+이 정보가 실제 입력창 상태와 맞지 않으면 한글 키도 그대로 앱에 넘길 수 있다.
+설정을 끄는 것만으로 이미 켜진 상태를 해제하지도 않는다.
+사용자가 겪은 순간의 알림·조회 결과는 기록하지 않았으므로 정확한 발생 조건은 미확인이다.
 
-The app remains sandboxed. One local Mach lookup exception, `com.apple.tsm.portname`, lets TIS notify the focused editor. Without it, a live test reported ABC as the system source while the editor still typed Korean; macOS logged a matching sandbox denial. No network, Accessibility, Input Monitoring, file-access permission, or external helper was added.
+## 복구 범위
 
-## Automated checks
+- 입력기 안의 ABC 전환, 통과 상태, 전환 설정과 메뉴를 제거한다.
+- 전환 기능에 추가했던 로컬 Mach 조회 예외도 제거한다.
+- 순아래 조합, 마지막 글자 직접 전달, Enter 전달, 연속 삭제 처리는 유지한다.
+- 사용자가 설정한 외부 F18 전환은 변경하지 않는다.
+- 같은 세션에서 Esc / Ctrl+[ 뒤에도 한글 입력이 이어지는 검사를 추가한다.
 
-- `make check`: 27 pinned rules, signed build, **268,468 composition/session/editing checks with 0 failures**, all five packaging test methods, and the signed app's self-check passed.
-- `composition_ok=true network_blocked=true errno=1`.
-- Added checks cover settings persistence, off/on behavior, direct/marked commit order, modifier combinations, reentrant calls, queued keys, failed selection and resuming Korean without an activation callback.
-- The additional `make test` run passed all 268,468 checks and the new IMK menu test. The menu test calls IMK's real command dispatcher and verifies both check states in an isolated executable's preference domain. It does not select or register a real input source.
+복구용 원본 앱은 `build/backups/Sunarae-0.3.0-before-escape-20261002.zip`에 보관한다.
+원본 실행 파일의 SHA-256은 다음과 같다.
 
-## Installed input method
+`0635c05eac003018d19c39a5bafa02832837ff95a0474b68e382672c55ec12ae`
 
-Final installed executable and distribution executable both have SHA-256:
+## 복구 확인
 
-`b781e965fa694467afaa89177a4f28a59bd14ae9e9958b1d0ba98b11c45883d5`
+사용자가 ABC로 바꾼 뒤 원본 백업 앱을 설치했다. 설치 파일의 버전·서명과
+위 해시를 확인했고, 기존 전환 설정도 껐다. 실제 키 입력 시험은 이번 복구에서 하지 않았다.
 
-The user allowed use of the keyboard/mouse. Physical key actions went to the isolated CodeMirror/WebKit probe with Vim enabled. No user document was edited.
-
-| Final build test | Observed result |
-|---|---|
-| `rkk`, Ctrl-[, then `dd` | `- 까`, then an empty document; no extra Korean insertion |
-| Reselect Sunarae, `rkk`, Enter, `rk` | `- 까\n- 가` |
-| Escape, then `dd` | `- 까`; the second line was deleted as a Vim command |
-
-The last two test traces contain no composition session and no extra Korean insertion after the exit shortcut. They are saved in `build/escape-verification-final-20261002.json`. The trace file contains only fixed samples entered in the test window. The fixture exited and ABC remained selected. The preference is enabled on this Mac for use; new installs still default to off.
-
-## Limits
-
-The fixture uses the pinned CodeMirror Markdown and Vim extensions; it is not every browser, terminal, or the complete SilverBullet app. The menu-bar UI could not be operated by the automation tool, so the menu action and check states were verified through IMK's command dispatcher instead.
-
-An extreme automation burst, without waiting between the shortcut and following keys, still produced a final-build web trace in which the first `d` reached the browser before Control-[ and temporarily changed `가` to `강`. The later tests waited for the shortcut's UI state before sending commands and passed. The queued-key guard cannot repair an event already processed before the exit shortcut reaches the IME; this burst case is not claimed fixed. Normal physical typing at that boundary needs further use to assess. Turn the option off if this affects use.
-
-Repeated development reinstalls also required reselecting the source and once starting the updated background app before the fixture attached to the new IME. The final app was running for the recorded tests. Installation registration and signature checks passed.
-
-The previous installed app is retained at `build/backups/Sunarae-0.3.0-before-escape-20261002.zip`. Temporary diagnostic code was removed; the production IME does not record key events or typed text.
+실행 코드·리소스·빌드 스크립트는 전환 기능 전 커밋 `9edfb68`과 같다.
+`make check`는 조합·세션·편집 268,282개 검사, 설치·빌드 검사 5개와
+서명된 앱의 자체 검사를 통과했다. 자체 검사에서 조합 성공과 네트워크 차단도 확인했다.

@@ -1,18 +1,10 @@
-# Sunarae 0.3.1 architecture
+# Sunarae 0.3.0 architecture
 
 The application keeps the registered input-source ID `local.inputmethod.Dukkeobi` for upgrades, while the app path, executable, controller class, visible name and icon now use Sunarae / 두벌식 순아래. The source directory remains `dukkeobi` so existing workspace paths stay valid.
 
 `KeyMap` maps macOS physical key positions to QWERTY ASCII. `Composer` sends those keys to the pinned `2noshift` engine. It keeps snapshots only for the current syllable's per-key undo and releases them on commit/reset. It has no comma state, contextual final mappings, timers, device checks, or external settings.
 
 `InputSession` guards the entire operation against reentrant IMK calls. It coordinates composition with `TextDelivery`, which owns the document range and text from this session. Before any replacement/deletion, delivery checks the client identity, caret and exact text. A mismatch drops the old state. The first insertion and append use the client's current selection; later replacements use a verified range. Text remains ordinary document text in the direct path, and finishing that path performs no client query or write.
-
-`InputSettings` stores one Boolean in the sandbox's UserDefaults: `switchToABCOnEscape`, false when absent. The input menu toggles it through InputMethodKit's command dispatch. Bare Escape and Control-[ check the preference, finish composition, then call the source-selection callback while the session's reentrancy guard is still held. Both return false so the original event reaches the editor. Extra Shift/Option/Command combinations are excluded; Caps Lock does not affect the match. Ordinary typing does not read preferences or query input sources.
-
-After successful selection, the session passes queued keys through instead of composing them. Activation clears this state. Some clients reuse a session without sending activation, so this state alone checks whether Sunarae has been selected again and resumes composition when it has. Failed selection keeps Korean usable. There is no delay, timer, or source query on the ordinary Korean typing path.
-
-Only `InputController` supplies the live `InputSource.selectABC` callback for each key event. It uses TIS to select the enabled `com.apple.keylayout.ABC` source, without enabling layouts or synthesizing keys. A missing source or failed selection leaves the original key unhandled. Tests inject a callback and use isolated preferences. The option applies wherever the input method receives these keys; it does not detect Vim modes, restore Korean automatically, or change the external F18 shortcut.
-
-The sandbox permits one extra local Mach lookup, `com.apple.tsm.portname`. TIS needs this to notify the focused client's Text Services Manager. Without it, the system source can say ABC while the current editor still uses Sunarae. This exception matches the `local-name` denial in the system log and the local Mach entitlement supported by macOS's `/System/Library/Sandbox/Profiles/application.sb`. No global lookup wildcard, external helper, Accessibility, Input Monitoring, file-access, or network entitlement is added. The signed-app self-check still checks that network access is blocked.
 
 The ordered-deletion behavior from 0.2.9 stays in `TextDelivery.removeLast`. The IMK adapter deletes a verified owned range through an empty `setMarkedText` replacement. This prevents the last native Backspace from reaching a web editor after the next IMK insertion. Deleting previous app-owned content still belongs to the app. Clients without document access use marked text as before.
 

@@ -10,7 +10,6 @@
 | 순아래 결합 규칙 | `spec/sunarae.json` | 아래 규칙 생성 명령, `make check` |
 | 조합 엔진과 한 키 되돌리기 | `Sources/Composer.swift`, `vendor/libhangul/` | `Tests/SunaraeChecks.swift` |
 | 키·단축키 처리 | `Sources/KeyMap.swift`, `Sources/InputSession.swift` | `Tests/SessionChecks.swift` |
-| Esc 전환 설정·입력 메뉴·ABC 선택 | `Sources/InputSettings.swift`, `Sources/InputSource.swift`, `Sources/InputController.swift` | `Tests/EscapeChecks.swift`, 실제 입력 메뉴·Vim 시험 |
 | 앱에 글자 삽입·교체·삭제 | `Sources/TextDelivery.swift`, `Sources/InputController.swift` | 세션·편집 검사와 실제 시험창 |
 | 검사에 쓰는 텍스트 클라이언트 | `Tests/TestSupport.swift` | `make test` |
 | 빌드 대상·소스 목록·공통 컴파일 설정 | `scripts/build-common.sh` | `make check`, `make calls`, `make probe` |
@@ -34,8 +33,6 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 - `Tests/TestSupport.swift`: 공통 도우미와 실제 NSTextView를 감싼 클라이언트.
 - `Tests/SunaraeChecks.swift`: 현대 한글 11,172자의 일반 두벌식·순아래 조합과 각 키 이전 상태로 되돌리기.
 - `Tests/SessionChecks.swift`: 확정·커서·문서 교체·중첩 호출.
-- `Tests/EscapeChecks.swift`: 기본값·설정 유지, Esc/Ctrl+[ 전달, 확정 후 전환, 중첩 호출, 수정키 조합 보호. 별도 설정 저장소와 전환 대역을 사용해 실제 입력기를 바꾸지 않는다.
-- `Tests/MenuChecks.swift`: 별도 실행 파일의 설정 저장소에서 IMK 메뉴 명령과 체크 표시를 확인한다. 실제 입력 소스를 등록하거나 선택하지 않는다.
 - `Tests/EditingChecks.swift`: 연속 삭제·붙여넣기·실행 취소.
 - `Tests/PackagingChecks.py`: 임시 폴더에서 설치 성공·목록 갱신 대기·실패 복원, 현재 입력기 조회 실패·사용 중 입력기·이름 충돌 보호, 빌드 실패·배포 폴더 교체 실패·성공 검사. 진단 도구가 조회 명령만 부르고 파일을 바꾸지 않는지도 확인한다.
 - `Tests/InputProbe.swift`, `Tests/DeletionProbe.swift`: 별도 시험창에서의 네이티브/WebKit 검사.
