@@ -36,6 +36,20 @@ Backspace는 현재 글자의 마지막 입력을 되돌립니다. `까(rkk)→�
 기존 두꺼비의 I/J/K/L/U 겹받침 단축키, 역순 결합, 쉼표 대체 시프트는 제거했습니다.
 쉼표와 세미콜론은 일반 문장부호로 입력합니다. 모아치기·한자 변환·약어 기능은 없습니다.
 
+### Esc로 영문 전환
+
+순아래를 선택한 상태에서 macOS 입력 메뉴의 **Esc / Ctrl+[ 누르면 ABC로 전환**을 체크하면 켜집니다.
+기본값은 꺼짐이며, 선택한 설정은 앱을 다시 시작해도 유지합니다. 같은 항목을 다시 누르면 꺼집니다.
+
+켜 두면 `Esc` 또는 `Ctrl+[`를 누를 때 현재 글자를 확정하고 ABC로 전환한 뒤, 원래 키를 앱에 넘깁니다.
+vi/Vim에서는 일반 모드로 나와 바로 `hjkl`, `dd`, `:w` 같은 명령을 쓸 수 있습니다.
+다시 한글을 쓸 때는 기존 한영 전환 키를 사용합니다. 입력 모드 진입 시 한글 자동 복원은 하지 않습니다.
+
+이 설정은 vi 모드를 감지하지 않고 **순아래가 키를 받는 모든 앱**에 적용합니다.
+팝업을 닫기 위해 Esc를 눌러도 ABC로 바뀔 수 있습니다. Shift·Option·Command 등을 함께 누른 다른 단축키에는 적용하지 않습니다.
+ABC가 활성화된 입력 소스 목록에 없거나 전환에 실패하면 현재 입력기를 유지하고, 원래 키는 앱에 넘깁니다.
+이 경우 시스템 설정 → 키보드 → 텍스트 입력 → 편집에서 ABC를 추가해 주세요.
+
 ## 설치·업데이트·삭제
 
 1. `dist/Install.command`를 실행합니다. 업데이트 전에는 ABC나 다른 입력기를 선택합니다.
@@ -99,21 +113,23 @@ make probe       # 네이티브 시험창 빌드
 make web-probe   # 시험창 + CodeMirror 빌드
 ```
 
-[0.3.0 검증 기록](docs/INPUT-VERIFICATION-0.3.0.md)에 실제 입력 결과와 검증 범위를 적었습니다.
+[0.3.0 순아래 검증](docs/INPUT-VERIFICATION-0.3.0.md)과 [0.3.1 Esc 전환 검증](docs/INPUT-VERIFICATION-0.3.1.md)에 실제 입력 결과와 검증 범위를 적었습니다.
 이전 0.2.x 문서는 두꺼비의 과거 동작 기록이며, 현재 사용법은 이 문서를 따릅니다.
 
 ## 소스·개인정보
 
 - `Sources/Composer.swift`: 순아래 조합 엔진과 한 키씩 되돌리기.
 - `Sources/KeyMap.swift`: macOS 키 위치와 Shift 해석.
+- `Sources/InputSettings.swift`, `Sources/InputSource.swift`: Esc 전환 설정 저장과 ABC 선택.
 - `Sources/InputSession.swift`: 키 처리, 확정, 중첩 호출 방지.
 - `Sources/TextDelivery.swift`: 커서·문자 확인, 직접 삽입·교체·삭제, 조합 표시 방식으로 전환.
 - `Sources/TextClient.swift`, `Sources/InputController.swift`: 앱의 텍스트 API와 InputMethodKit 연결.
 - `vendor/libhangul/`: 고정한 한글 엔진과 순아래 변경 사항.
 - `spec/`: 순아래 규칙과 출처. 이전 두겹이 규격은 `docs/archive/`에 보관합니다.
 
-입력 내용 저장·전송·분석·자동 업데이트 기능이 없습니다. 앱은 네트워크 권한 없이 App Sandbox를 사용합니다.
+입력 내용 저장·전송·분석·자동 업데이트 기능이 없습니다. Esc 전환 설정의 켜짐/꺼짐만 저장합니다. 앱은 네트워크 권한 없이 App Sandbox를 사용합니다.
 손쉬운 사용·입력 모니터링 권한을 요구하지 않습니다. 현재 글자와 연속 삭제에 필요한 상태만 메모리에 두고 조합 종료 시 비웁니다.
+Esc 전환을 위해 macOS 텍스트 입력 서비스(`com.apple.tsm.portname`)와의 로컬 통신 한 가지를 허용합니다. 파일 접근·네트워크 권한은 추가하지 않습니다.
 
 순아래 제작자는 **꼬마집오리**입니다. [제작자 설명](https://sites.google.com/site/tinyduckn/dubeolsig-sun-alae),
 [구현 기준](https://github.com/3beol/libhangul/blob/5244cb30b0f995ff2567ab2ac51dba3e9958a0d2/data/keyboards_info/2set_2noshift.txt),

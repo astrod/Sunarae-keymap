@@ -6,8 +6,16 @@ final class InputSession {
     let composer = Composer()
     private let delivery = TextDelivery()
     private var processing = false
+    private var passingThroughToABC = false
+    private let settings: InputSettings
+
+    init(settings: InputSettings = .shared) {
+        self.settings = settings
+    }
 
     var markedText: String { delivery.isMarked ? composer.preedit : "" }
+
+    func activate() { passingThroughToABC = false }
 
     private func reset() {
         composer.reset()
@@ -33,10 +41,29 @@ final class InputSession {
 
     // Key repeats use the same composition rules as separate key presses.
     func input(keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
-               client: TextClient) -> Bool {
+               client: TextClient, selectABC: () -> Bool = { false },
+               sunaraeIsSelected: () -> Bool = { true }) -> Bool {
         guard !processing else { return false }
         processing = true
         defer { processing = false }
+        if passingThroughToABC {
+            // Some clients reselect an existing IMK session without activating
+            // it again. Resume when Sunarae is selected, even without that callback.
+            guard sunaraeIsSelected() else { return false }
+            passingThroughToABC = false
+        }
+        if KeyMap.isEscapeShortcut(keyCode: keyCode, modifiers: modifiers),
+           settings.switchToABCOnEscape {
+            // Finish before switching, since IMK can reenter deactivateServer.
+            // Returning false delivers the original Escape/Ctrl-[ to the app.
+            finish(to: client)
+            // Web clients can queue another key before they finish switching.
+            // Do not compose it as Korean while waiting for deactivation.
+            // Set this before the call so a reentrant activation can clear it.
+            passingThroughToABC = true
+            if !selectABC() { passingThroughToABC = false }
+            return false
+        }
         if !modifiers.intersection([.command, .control, .option]).isEmpty {
             finish(to: client)
             return false
