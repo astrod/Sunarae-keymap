@@ -44,13 +44,14 @@ xcrun swiftc -O -target "$swift_target" -framework Carbon \
     scripts/InputSourceTool.swift -o "$artifact_dir/Support/input-source"
 codesign --force --sign - --timestamp=none "$artifact_dir/Support/input-source"
 codesign --verify --strict "$artifact_dir/Support/input-source"
-cp scripts/install.sh scripts/uninstall.sh "$artifact_dir/Support/"
-cp scripts/Install.command scripts/Uninstall.command "$artifact_dir/"
+cp scripts/install.sh scripts/uninstall.sh scripts/diagnose.sh "$artifact_dir/Support/"
+cp scripts/Install.command scripts/Uninstall.command scripts/Diagnose.command "$artifact_dir/"
 chmod +x "$artifact_dir/Support/"*.sh "$artifact_dir/"*.command
 if [[ -f README.md ]]; then cp README.md "$artifact_dir/README.md"; fi
 cp CONTRIBUTING.md THIRD_PARTY.md "$artifact_dir/"
 mkdir -p "$artifact_dir/docs"
 cp docs/INPUT-VERIFICATION-*.md "$artifact_dir/docs/"
+cp docs/IMPLEMENTATION.md "$artifact_dir/docs/"
 
 if [[ -e "$dist_dir" ]]; then mv "$dist_dir" "$stage_dir/Previous"; fi
 mv "$artifact_dir" "$dist_dir"

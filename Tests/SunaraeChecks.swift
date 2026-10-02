@@ -17,6 +17,27 @@ let sunaraeExamples: [(String, String)] = [
     ("r,,", "ㄱ,,"), ("r;", "ㄱ;"), ("r<", "ㄱ<"), ("r:", "ㄱ:")
 ]
 
+private func checkSyllableAndUndo(_ keys: String, expected: String, label: String) {
+    let composer = Composer()
+    var states: [String] = []
+    var committed = ""
+    for key in keys {
+        states.append(composer.preedit)
+        committed += composer.input(key).committed
+    }
+    expect(committed + composer.preedit, expected, label)
+    expect(committed, "", "one syllable remains editable \(keys)")
+    // Compare with the actual state before each key. This also checks the
+    // snapshot restores compound vowels/finals and repeated-vowel initials.
+    for state in states.reversed() {
+        expect(String(composer.backspace()), "true", "undo one key \(keys)")
+        expect(composer.preedit, state, "restore previous syllable state \(keys)")
+    }
+    expect(String(composer.backspace()), "false", "nothing left to undo \(keys)")
+    for key in keys { committed += composer.input(key).committed }
+    expect(committed + composer.flush(), expected, "retype and flush \(keys)")
+}
+
 func runSunaraeChecks() {
     let initials = Array("rRseEfaqQtTdwWczxvg").map(String.init)
     let vowels = ["k", "o", "i", "O", "j", "p", "u", "P", "h", "hk", "ho", "hl", "y", "n", "nj", "np", "nl", "b", "m", "ml", "l"]
@@ -28,12 +49,12 @@ func runSunaraeChecks() {
             for t in 0..<28 {
                 let expected = String(Unicode.Scalar(0xac00 + (l * 21 + v) * 28 + t)!)
                 let standard = initials[l] + vowels[v] + finals[t]
-                expect(compose(standard), expected, "standard syllable \(standard)")
+                checkSyllableAndUndo(standard, expected: expected, label: "standard syllable \(standard)")
                 var vowel = vowels[v].replacingOccurrences(of: "O", with: "il").replacingOccurrences(of: "P", with: "ul")
                 if initials[l] != initials[l].lowercased() { vowel = String(vowel.first!) + vowel }
                 let final = finals[t].replacingOccurrences(of: "R", with: "rr").replacingOccurrences(of: "T", with: "tt")
                 let keys = initials[l].lowercased() + vowel + final
-                expect(compose(keys), expected, "Sunarae syllable \(keys)")
+                checkSyllableAndUndo(keys, expected: expected, label: "Sunarae syllable \(keys)")
             }
         }
     }

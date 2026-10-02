@@ -13,6 +13,12 @@ func sources() -> [TISInputSource] {
     return result.takeRetainedValue() as? [TISInputSource] ?? []
 }
 func current() -> TISInputSource { TISCopyCurrentKeyboardInputSource().takeRetainedValue() }
+func currentIdentifier() -> String {
+    guard let id = property(current(), kTISPropertyInputSourceID), !id.isEmpty else {
+        fail("현재 입력기를 확인하지 못했어요")
+    }
+    return id
+}
 func flag(_ source: TISInputSource, _ key: CFString) -> Bool {
     guard let pointer = TISGetInputSourceProperty(source, key) else { return false }
     return CFBooleanGetValue(Unmanaged<CFBoolean>.fromOpaque(pointer).takeUnretainedValue())
@@ -25,7 +31,7 @@ let arguments = CommandLine.arguments
 guard arguments.count >= 2 else { fail("Usage: input-source current|register PATH|register-only PATH|disable|trash PATH|list|status") }
 switch arguments[1] {
 case "current":
-    print(property(current(), kTISPropertyInputSourceID) ?? "unknown")
+    print(currentIdentifier())
 case "register", "register-only":
     guard arguments.count == 3 else { fail("An app path is required") }
     let url = URL(fileURLWithPath: arguments[2])
@@ -52,7 +58,7 @@ case "register", "register-only":
         print("시스템 설정 → 키보드 → 텍스트 입력 → 편집에서 두벌식 순아래를 추가하고, 사용 승인 요청을 확인해 주세요.")
     }
 case "disable":
-    if property(current(), kTISPropertyBundleID) == bundleID {
+    if currentIdentifier().hasPrefix(bundleID) {
         fail("먼저 입력기를 ABC 또는 다른 한글 입력기로 바꾼 뒤 다시 실행해 주세요.")
     }
     for source in sources() { check(TISDisableInputSource(source), "입력 소스에서 제거하지 못했어요") }

@@ -29,6 +29,72 @@ def executable(file, contents):
 
 
 class PackagingChecks(unittest.TestCase):
+    def test_diagnosis_only_reads_state(self):
+        for installed, query_fails in [(False, False), (True, False), (True, True)]:
+            with self.subTest(installed=installed, query_fails=query_fails), tempfile.TemporaryDirectory(prefix='Sunarae diagnose ') as temp:
+                base = Path(temp)
+                artifacts = base / 'artifacts'
+                (artifacts / 'Support').mkdir(parents=True)
+                shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
+                executable(artifacts / 'Support/input-source', '''#!/bin/bash
+echo "$1" >> "$SUNARAE_TEST_LOG"
+case "$1" in
+  current)
+    [[ "$SUNARAE_TEST_QUERY_FAILS" != true ]] || exit 42
+    echo com.apple.keylayout.ABC ;;
+  status) echo registered=false ;;
+  *) exit 99 ;;
+esac
+''')
+                target = base / 'Input Methods'
+                target.mkdir()
+                if installed:
+                    shutil.copytree(artifacts / 'Sunarae.app', target / 'Sunarae.app')
+                before = snapshot(target)
+                artifact_before = snapshot(artifacts)
+                log = base / 'calls'
+                env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
+                           SUNARAE_TEST_LOG=str(log), SUNARAE_TEST_QUERY_FAILS=str(query_fails).lower())
+                result = run(['bash', 'scripts/diagnose.sh', str(artifacts)], env=env)
+                self.assertEqual(result.returncode, int(query_fails), result.stdout + result.stderr)
+                self.assertIn('버전:', result.stdout)
+                self.assertIn('서명: 정상', result.stdout)
+                self.assertIn('registered=false', result.stdout)
+                self.assertEqual(log.read_text().splitlines(), ['current', 'status'])
+                self.assertEqual(snapshot(target), before)
+                self.assertEqual(snapshot(artifacts), artifact_before)
+
+    def test_unknown_current_source_stops_before_installing(self):
+        for mode in ['error', 'empty', 'unknown']:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory(prefix='Sunarae query ') as temp:
+                base = Path(temp)
+                artifacts = base / 'artifacts'
+                (artifacts / 'Support').mkdir(parents=True)
+                shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
+                executable(artifacts / 'Support/input-source', '''#!/bin/bash
+case "$1" in
+  current)
+    case "$SUNARAE_TEST_QUERY" in
+      error) exit 42 ;;
+      empty) exit 0 ;;
+      unknown) echo unknown ;;
+    esac ;;
+  *) echo unexpected-mutation >> "$SUNARAE_TEST_LOG" ;;
+esac
+''')
+                target = base / 'Input Methods'
+                target.mkdir()
+                shutil.copytree(artifacts / 'Sunarae.app', target / 'Sunarae.app')
+                (target / 'Sunarae.app/old-install-marker').write_text('previous install')
+                before = snapshot(target)
+                log = base / 'calls'
+                env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
+                           SUNARAE_TEST_QUERY=mode, SUNARAE_TEST_LOG=str(log))
+                result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertEqual(snapshot(target), before)
+                self.assertFalse(log.exists())
+
     def test_install_outcomes(self):
         # Exit zero covers both ready and successfully registered but pending.
         # Native LS/TIS calls are replaced at the helper boundary, not invoked.
@@ -135,6 +201,8 @@ exec /bin/mv "$@"
                         self.assertFalse((dist / 'Sunarae.app/Contents/Resources/obsolete').exists())
                         self.assertTrue((dist / 'Support/input-source').is_file())
                         self.assertTrue(os.access(dist / 'Install.command', os.X_OK))
+                        self.assertTrue(os.access(dist / 'Diagnose.command', os.X_OK))
+                        self.assertTrue((dist / 'docs/IMPLEMENTATION.md').is_file())
                         verified = run(['codesign', '--verify', '--deep', '--strict', str(dist / 'Sunarae.app')])
                         self.assertEqual(verified.returncode, 0, verified.stderr)
                     self.assertEqual(list(project.glob('.Sunarae-build.*')), [])

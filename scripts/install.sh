@@ -18,7 +18,11 @@ expected_id='local.inputmethod.Dukkeobi'
 [[ -x "$source_tool" && -d "$source_app" ]] || { echo '설치 파일이 없어요. 먼저 빌드해 주세요.' >&2; exit 1; }
 [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$source_app/Contents/Info.plist")" == "$expected_id" ]] || exit 1
 codesign --verify --deep --strict "$source_app"
-if [[ "$("$source_tool" current)" == "$expected_id"* ]]; then
+if ! current_source="$("$source_tool" current)" || [[ -z "$current_source" || "$current_source" == unknown ]]; then
+    echo '현재 입력기를 확인하지 못해 설치를 중단했어요. 입력 메뉴를 확인한 뒤 다시 실행해 주세요.' >&2
+    exit 1
+fi
+if [[ "$current_source" == "$expected_id"* ]]; then
     echo '업데이트 전 입력기를 ABC 또는 다른 입력기로 바꿔 주세요.' >&2
     exit 1
 fi
