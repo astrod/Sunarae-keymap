@@ -1,6 +1,6 @@
-# Sunarae 0.4.1 architecture
+# Sunarae 0.5.0 architecture
 
-The application keeps the registered input-source ID `local.inputmethod.Dukkeobi` for upgrades, while the app path, executable, controller class, visible name and icon now use Sunarae / 두벌식 순아래. The source directory remains `dukkeobi` so existing workspace paths stay valid.
+The app bundle, input-source ID and IMK connection use `local.inputmethod.Sunarae`, `Sunarae.app` and `local.inputmethod.Sunarae_Connection`. The test probe and pasteboard identifiers also use Sunarae.
 
 `KeyMap` maps macOS physical key positions to QWERTY ASCII. `Composer` sends those keys to the pinned `2noshift` engine. It keeps snapshots only for the current syllable's per-key undo and releases them on commit/reset. It has no comma state, contextual final mappings, timers, device checks, or external settings.
 
@@ -22,7 +22,9 @@ The input method must be running to receive its global hotkey, so users select S
 
 The C vendor contains only the former upstream base plus the Sunarae table, repeated-vowel branch, and one snapshot helper. The old direct-final and reverse-order patches are gone. The reference data and engine source revisions are pinned in `spec/sources.json`; normal builds are offline.
 
-Installation stages a signed bundle, checks the old bundle identity, stops only the exact old executable, moves the bundle, and registers its new location with Launch Services before TIS. Registration failures restore the previous bundle path. Successful registration with an empty source list keeps the new bundle and explains how to add it after logging in again. This pending state is a successful helper exit, so installation does not roll it back. The helper reads enabled state again after enabling a source. It does not change the selected input source or grant macOS input-method approval.
+Installation validates the incoming ID and reads any prior identity from the installed Sunarae bundle's executable, controller, connection and TIS metadata. It never stores a list of historical names. A recognized prior ID is disabled and replaced; registration failure restores the prior files and enabled state. Changing the ID creates a new settings domain with defaults; it does not copy the old settings container.
+
+`make package` builds a scripts-only .pkg for macOS Installer's current-user home domain. Its bundled postinstall calls the same staged installer with `--switch-to-abc`. It rejects root execution and clears the test-only destination override. No separate installer app, login item, helper process, or admin install is used. The installer checks that ABC switching has completed and checks again before stopping the installed input method. The .pkg is unsigned; input-method approval and Gatekeeper decisions stay with the user.
 
 The installer aborts before moving bundles if the current-source query fails or returns an empty/unknown identifier. The registration helper also refuses to disable sources when it cannot identify the current source. `Diagnose.command` reads build/installed versions, verifies signatures, and queries source state without executing the input method or changing registration. It does not read typed text, documents, or the clipboard.
 

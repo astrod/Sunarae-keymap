@@ -10,7 +10,7 @@ cat > "$probe_dir/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleIdentifier</key><string>local.dukkeobi.InputProbe</string>
+<key>CFBundleIdentifier</key><string>local.sunarae.InputProbe</string>
 <key>CFBundleName</key><string>Input Probe</string>
 <key>CFBundleExecutable</key><string>InputProbe</string>
 <key>CFBundlePackageType</key><string>APPL</string>

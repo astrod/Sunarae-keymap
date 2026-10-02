@@ -16,6 +16,7 @@
 | 검사에 쓰는 텍스트 클라이언트 | `Tests/TestSupport.swift` | `make test` |
 | 빌드 대상·소스 목록·공통 컴파일 설정 | `scripts/build-common.sh` | `make check`, `make calls`, `make probe` |
 | 빌드 결과물 교체·설치 실패 복원 | `scripts/build.sh`, `scripts/install.sh`, `scripts/InputSourceTool.swift` | `make packaging` |
+| macOS 설치 패키지 | `scripts/package.sh`, `scripts/package-postinstall.sh`, `Resources/Installer/` | `make package`, 패키지 내용 검사, 실제 설치 프로그램 |
 | 버전·서명·등록 상태 진단 | `scripts/diagnose.sh`, `scripts/Diagnose.command` | `make diagnose`, `make packaging` |
 | 앱 표시 이름·버전·최소 macOS | `Resources/Info.plist` | `make build` |
 
@@ -40,6 +41,7 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 - `Tests/ShortcutChecks.swift`: 별도 설정 저장소와 등록 대역으로 키 검증·저장·변경·해제, 실패 시 기존 값 유지, 설정 창 취소, 키 반복과 전환 방향을 확인합니다. 전역 단축키를 실제로 등록하지 않습니다.
 - `Tests/EditingChecks.swift`: 연속 삭제·붙여넣기·실행 취소.
 - `Tests/PackagingChecks.py`: 임시 폴더에서 설치 성공·목록 갱신 대기·실패 복원, 현재 입력기 조회 실패·사용 중 입력기·이름 충돌 보호, 빌드 실패·배포 폴더 교체 실패·성공 검사. 진단 도구가 조회 명령만 부르고 파일을 바꾸지 않는지도 확인한다.
+- `.pkg` 검사에서는 현재 사용자용 도메인, 포함된 앱의 ID와 서명, 설치 스크립트를 확인한다. `Tests/InputSourceStub.py`가 입력기 전환·활성화 상태를 대신해 실제 입력 소스를 바꾸지 않는다.
 - `Tests/InputProbe.swift`, `Tests/DeletionProbe.swift`: 별도 시험창에서의 네이티브/WebKit 검사.
 
 `make test`는 기존 `build/libhangul.a`를 믿지 않고 세 C 파일을 새로 빌드합니다. 라이브러리가 없어도 실행할 수 있습니다.
@@ -65,8 +67,7 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 `build`, `dist`, `tmp`는 결과물·임시 자료이므로 `.gitignore`에서 제외합니다.
 `build/backups`에는 복구용 백업도 있으니 작업 폴더를 정리할 때 백업을 먼저 따로 보관합니다.
 빌드는 같은 파일시스템의 `.Sunarae-build.*` 폴더에서 결과물을 준비하고 검증 후 `dist` 전체를 교체합니다. 교체 실패 시 이전 폴더를 복원합니다. 복원도 실패하면 백업 폴더를 지우지 않고 위치를 출력합니다.
-현재 설계는 `docs/IMPLEMENTATION.md`, 순아래 검증은 `docs/INPUT-VERIFICATION-0.3.0.md`를 봅니다.
-`docs`의 0.2.x 기록과 `docs/archive`는 이전 두꺼비의 기록입니다.
+현재 설계는 `docs/IMPLEMENTATION.md`, 현재 검증은 `docs/INPUT-VERIFICATION-0.5.0.md`를 봅니다.
 
 소스는 로컬 Git 저장소로 관리합니다. `7e51efc`는 2026-09-20 정리 작업 전 기준 상태입니다.
 `git diff`로 변경을 확인하고 검사를 통과한 단위로 커밋합니다. 빌드 결과와 임시 폴더는 추적하지 않습니다.

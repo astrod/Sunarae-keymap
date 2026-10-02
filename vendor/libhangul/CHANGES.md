@@ -11,4 +11,4 @@ The local changes below were recorded in the Sunarae baseline on 2026-09-20 (`7e
 - `sunarae.h`: one local snapshot helper for per-key Backspace. The Swift wrapper restores a full snapshot so undoing an initial replacement also restores the prior vowel and stack. Copies share only immutable built-in tables; this app sets no callbacks or dynamic keyboards.
 - `module.modulemap`: Swift module import.
 
-The old Dugyeob tables, direct-final shortcuts, reverse-final carry patch, and context inspection/feed helpers have been removed. The three C files retain their upstream license notices. The build sets `ENABLE_EXTERNAL_KEYBOARDS=0`; it does not include dictionaries or external layout loading. No 24-key extensions are enabled.
+The three C files retain their upstream license notices. The build sets `ENABLE_EXTERNAL_KEYBOARDS=0`; it does not include dictionaries or external layout loading. No 24-key extensions are enabled.

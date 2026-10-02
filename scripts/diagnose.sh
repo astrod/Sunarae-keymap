@@ -33,7 +33,6 @@ echo '두벌식 순아래 진단'
 echo "macOS: $(sw_vers -productVersion) / $(uname -m)"
 show_bundle '빌드 파일' "$artifact_dir/Sunarae.app"
 show_bundle '설치 파일' "$input_dir/Sunarae.app"
-if [[ -e "$input_dir/Dukkeobi.app" ]]; then show_bundle '이전 이름의 설치 파일' "$input_dir/Dukkeobi.app"; fi
 if current_source="$("$source_tool" current)" && [[ -n "$current_source" && "$current_source" != unknown ]]; then
     echo "현재 입력기: $current_source"
 else

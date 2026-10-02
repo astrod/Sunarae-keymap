@@ -3,7 +3,7 @@ import Foundation
 
 enum InputSource {
     static let abcID = "com.apple.keylayout.ABC"
-    static let sunaraeID = "local.inputmethod.Dukkeobi"
+    static let sunaraeID = "local.inputmethod.Sunarae"
 
     static func destination(from identifier: String) -> String {
         identifier == sunaraeID ? abcID : sunaraeID

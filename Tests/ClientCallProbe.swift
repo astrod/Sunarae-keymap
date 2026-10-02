@@ -47,7 +47,7 @@ private enum ClientCallProbe {
     static func main() throws {
         _ = NSApplication.shared
         let cases = [
-            ("chat sentence", "dkssudgktpdy. enrjjqlfh gksrmfdmf dlqfurgkqslek.", "안녕하세요. 두꺼비로 한글을 입력합니다."),
+            ("chat sentence", "dkssudgktpdy. tnsdkfofh gksrmfdmf dlqfurgkqslek.", "안녕하세요. 순아래로 한글을 입력합니다."),
             ("commas and punctuation", "todrkr, rkqt, ekfr, r; r: r<", "생각, 값, 닭, ㄱ; ㄱ: ㄱ<"),
             ("single word", "dkssudgktpdy", "안녕하세요")
         ]

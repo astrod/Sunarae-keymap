@@ -126,7 +126,7 @@ func runEditingChecks() {
             view.breakUndoCoalescing()
             view.history.endUndoGrouping()
         }
-        let board = NSPasteboard(name: .init("local.dukkeobi.editing-test.\(UUID().uuidString)"))
+        let board = NSPasteboard(name: .init("local.sunarae.editing-test.\(UUID().uuidString)"))
         defer { board.releaseGlobally() }
         board.setString("붙여넣기 😀", forType: .string)
         group {

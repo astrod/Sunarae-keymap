@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise packaging in temporary folders; never register a real input source."""
 import hashlib
+import json
+import sys
 import os
 from pathlib import Path
 import plistlib
@@ -8,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -29,6 +32,34 @@ def executable(file, contents):
 
 
 class PackagingChecks(unittest.TestCase):
+    def test_package_is_user_only(self):
+        result = run(['bash', 'scripts/package.sh'])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        info = plistlib.loads((ROOT / 'dist/Sunarae.app/Contents/Info.plist').read_bytes())
+        package = ROOT / 'dist' / f"Sunarae-{info['CFBundleShortVersionString']}-{os.uname().machine}.pkg"
+        domains = run(['/usr/sbin/installer', '-pkg', str(package), '-dominfo'])
+        self.assertEqual(domains.returncode, 0, domains.stdout + domains.stderr)
+        self.assertEqual(domains.stdout.strip(), 'CurrentUserHomeDirectory')
+        with tempfile.TemporaryDirectory(prefix='Sunarae package ') as temp:
+            expanded = Path(temp) / 'Expanded'
+            result = run(['pkgutil', '--expand-full', str(package), str(expanded)])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            distribution = ET.parse(expanded / 'Distribution').getroot()
+            self.assertEqual(distribution.find('domains').attrib, dict(
+                enable_anywhere='false', enable_currentUserHome='true', enable_localSystem='false'))
+            plists = list(expanded.rglob('Sunarae.app/Contents/Info.plist'))
+            self.assertEqual(len(plists), 1)
+            payload = plistlib.loads(plists[0].read_bytes())
+            for key in ['CFBundleIdentifier', 'TISInputSourceID']:
+                self.assertEqual(payload[key], 'local.inputmethod.Sunarae')
+            self.assertEqual(payload['InputMethodConnectionName'], 'local.inputmethod.Sunarae_Connection')
+            verified = run(['codesign', '--verify', '--deep', '--strict', str(plists[0].parent.parent)])
+            self.assertEqual(verified.returncode, 0, verified.stderr)
+            postinstall = list(expanded.rglob('postinstall'))
+            self.assertEqual(len(postinstall), 1)
+            self.assertEqual(postinstall[0].read_bytes(), (ROOT / 'scripts/package-postinstall.sh').read_bytes())
+            self.assertTrue(os.access(postinstall[0], os.X_OK))
+
     def test_diagnosis_only_reads_state(self):
         for installed, query_fails in [(False, False), (True, False), (True, True)]:
             with self.subTest(installed=installed, query_fails=query_fails), tempfile.TemporaryDirectory(prefix='Sunarae diagnose ') as temp:
@@ -64,91 +95,67 @@ esac
                 self.assertEqual(snapshot(target), before)
                 self.assertEqual(snapshot(artifacts), artifact_before)
 
+    def prepare_install(self, base, previous=None, enabled=False, **options):
+        artifacts = base / 'artifacts'
+        (artifacts / 'Support').mkdir(parents=True)
+        shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
+        stub = (ROOT / 'Tests/InputSourceStub.py').read_text().split('\n', 1)[1]
+        executable(artifacts / 'Support/input-source', '#!' + sys.executable + '\n' + stub)
+        target = base / 'Input Methods'
+        target.mkdir()
+        if previous:
+            old = target / 'Sunarae.app'
+            shutil.copytree(artifacts / 'Sunarae.app', old)
+            info_path = old / 'Contents/Info.plist'
+            info = plistlib.loads(info_path.read_bytes())
+            info.update(CFBundleIdentifier=previous, TISInputSourceID=previous,
+                        InputMethodConnectionName=previous + '_Connection')
+            info_path.write_bytes(plistlib.dumps(info))
+            (old / 'old-install-marker').write_text('keep on rollback')
+        state = dict(current='com.apple.keylayout.ABC', enabled=[previous] if previous and enabled else [])
+        state.update(options)
+        state_path = base / 'state.json'
+        state_path.write_text(json.dumps(state))
+        env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
+                   SUNARAE_TEST_STATE=str(state_path), SUNARAE_REAL_TOOL=str(ROOT / 'dist/Support/input-source'))
+        return artifacts, target, state_path, env
+
     def test_unknown_current_source_stops_before_installing(self):
         for mode in ['error', 'empty', 'unknown']:
             with self.subTest(mode=mode), tempfile.TemporaryDirectory(prefix='Sunarae query ') as temp:
-                base = Path(temp)
-                artifacts = base / 'artifacts'
-                (artifacts / 'Support').mkdir(parents=True)
-                shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
-                executable(artifacts / 'Support/input-source', '''#!/bin/bash
-case "$1" in
-  current)
-    case "$SUNARAE_TEST_QUERY" in
-      error) exit 42 ;;
-      empty) exit 0 ;;
-      unknown) echo unknown ;;
-    esac ;;
-  *) echo unexpected-mutation >> "$SUNARAE_TEST_LOG" ;;
-esac
-''')
-                target = base / 'Input Methods'
-                target.mkdir()
-                shutil.copytree(artifacts / 'Sunarae.app', target / 'Sunarae.app')
-                (target / 'Sunarae.app/old-install-marker').write_text('previous install')
+                artifacts, target, state_path, env = self.prepare_install(
+                    Path(temp), previous='local.inputmethod.Sunarae', query=mode)
                 before = snapshot(target)
-                log = base / 'calls'
-                env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
-                           SUNARAE_TEST_QUERY=mode, SUNARAE_TEST_LOG=str(log))
                 result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
-                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(snapshot(target), before)
-                self.assertFalse(log.exists())
+                self.assertTrue(set(json.loads(state_path.read_text())['calls']) <= {'inspect', 'enabled', 'current'})
 
     def test_install_outcomes(self):
-        # Exit zero covers both ready and successfully registered but pending.
-        # Native LS/TIS calls are replaced at the helper boundary, not invoked.
-        for previous in [None, 'Sunarae.app', 'Dukkeobi.app']:
-            for outcome in ['ready', 'pending', 'failure']:
-                with self.subTest(previous=previous, outcome=outcome), tempfile.TemporaryDirectory(prefix='Sunarae install ') as temp:
-                    base = Path(temp)
-                    artifacts = base / 'artifacts'
-                    (artifacts / 'Support').mkdir(parents=True)
-                    shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
-                    executable(artifacts / 'Support/input-source', '''#!/bin/bash
-case "$1" in
-  current) echo com.apple.keylayout.ABC ;;
-  register|register-only)
-    echo "$1" >> "$SUNARAE_TEST_LOG"
-    echo "$SUNARAE_TEST_OUTCOME"
-    [[ "$SUNARAE_TEST_OUTCOME" != failure ]] ;;
-  *) exit 99 ;;
-esac
-''')
-                    target = base / 'Input Methods'
-                    target.mkdir()
-                    old = target / previous if previous else None
-                    if old:
-                        shutil.copytree(artifacts / 'Sunarae.app', old)
-                        # Distinguish a previous install from its replacement.
-                        (old / 'old-install-marker').write_text('keep on rollback')
-                    before = snapshot(target)
-                    env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
-                               SUNARAE_TEST_OUTCOME=outcome, SUNARAE_TEST_LOG=str(base / 'calls'))
-                    result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
-                    if outcome == 'failure':
-                        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
-                        self.assertEqual(snapshot(target), before)
-                    else:
-                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                        self.assertEqual(snapshot(target / 'Sunarae.app'), snapshot(artifacts / 'Sunarae.app'))
-                        self.assertFalse((target / 'Dukkeobi.app').exists())
-                    self.assertEqual(list(target.glob('.Sunarae-install.*')), [])
+        # Exercise fresh installs, same-ID updates and a discovered prior ID.
+        for previous in [None, 'local.inputmethod.Sunarae', 'local.inputmethod.Previous']:
+            for enabled in [False, True]:
+                for outcome in ['ready', 'pending', 'failure']:
+                    with self.subTest(previous=previous, enabled=enabled, outcome=outcome), tempfile.TemporaryDirectory(prefix='Sunarae install ') as temp:
+                        artifacts, target, state_path, env = self.prepare_install(
+                            Path(temp), previous=previous, enabled=enabled, outcome=outcome)
+                        before = snapshot(target)
+                        result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
+                        state = json.loads(state_path.read_text())
+                        if outcome == 'failure':
+                            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                            self.assertEqual(snapshot(target), before)
+                            self.assertEqual(state['enabled'], [previous] if previous and enabled else [])
+                        else:
+                            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                            self.assertEqual(snapshot(target / 'Sunarae.app'), snapshot(artifacts / 'Sunarae.app'))
+                            if previous and previous != 'local.inputmethod.Sunarae':
+                                self.assertNotIn(previous, state['enabled'])
+                        self.assertEqual(list(target.glob('.Sunarae-install.*')), [])
 
     def test_active_source_and_name_collision(self):
         with tempfile.TemporaryDirectory(prefix='Sunarae guards ') as temp:
-            base = Path(temp)
-            artifacts = base / 'artifacts'
-            (artifacts / 'Support').mkdir(parents=True)
-            shutil.copytree(ROOT / 'dist/Sunarae.app', artifacts / 'Sunarae.app')
-            executable(artifacts / 'Support/input-source', '''#!/bin/bash
-[[ "$1" == current ]] || exit 99
-echo "$SUNARAE_TEST_CURRENT"
-''')
-            target = base / 'Input Methods'
-            target.mkdir()
-            env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target),
-                       SUNARAE_TEST_CURRENT='local.inputmethod.Dukkeobi')
+            artifacts, target, state_path, env = self.prepare_install(Path(temp), current='local.inputmethod.Sunarae')
             result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(list(target.iterdir()), [])
@@ -156,8 +163,29 @@ echo "$SUNARAE_TEST_CURRENT"
             unrelated.mkdir(parents=True)
             (unrelated / 'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'other.app'}))
             before = snapshot(target)
-            env['SUNARAE_TEST_CURRENT'] = 'com.apple.keylayout.ABC'
+            state_path.write_text(json.dumps(dict(current='com.apple.keylayout.ABC', enabled=[])))
             result = run(['bash', 'scripts/install.sh', str(artifacts)], env=env)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(snapshot(target), before)
+
+    def test_automatic_switch_and_late_reselection(self):
+        for previous in ['local.inputmethod.Sunarae', 'local.inputmethod.Previous']:
+            for switch in ['ready', 'failure', 'stuck']:
+                with self.subTest(previous=previous, switch=switch), tempfile.TemporaryDirectory(prefix='Sunarae switch ') as temp:
+                    artifacts, target, state_path, env = self.prepare_install(
+                        Path(temp), previous=previous, enabled=True, current=previous, switch=switch)
+                    before = snapshot(target)
+                    result = run(['bash', 'scripts/install.sh', str(artifacts), '--switch-to-abc'], env=env)
+                    if switch == 'ready':
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertEqual(json.loads(state_path.read_text())['current'], 'com.apple.keylayout.ABC')
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertEqual(snapshot(target), before)
+        with tempfile.TemporaryDirectory(prefix='Sunarae reselect ') as temp:
+            artifacts, target, _, env = self.prepare_install(Path(temp), previous='local.inputmethod.Sunarae', reselect=True)
+            before = snapshot(target)
+            result = run(['bash', 'scripts/install.sh', str(artifacts), '--switch-to-abc'], env=env)
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(snapshot(target), before)
 

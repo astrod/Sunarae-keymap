@@ -119,7 +119,7 @@ final class ProbeApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
         targetIsWeb = button.tag >= 2
-        let id = button.tag % 2 == 0 ? "com.apple.inputmethod.Korean.2SetKorean" : "local.inputmethod.Dukkeobi"
+        let id = button.tag % 2 == 0 ? "com.apple.inputmethod.Korean.2SetKorean" : "local.inputmethod.Sunarae"
         desiredSource = id
         Trace.shared.sample = "\(targetIsWeb ? "web" : "native")-\(button.tag % 2 == 0 ? "apple" : "sunarae")"
         if targetIsWeb {

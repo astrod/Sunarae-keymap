@@ -1,10 +1,11 @@
 .DEFAULT_GOAL := help
-.PHONY: help build test check rules packaging diagnose calls probe web-probe
+.PHONY: help build test check rules packaging diagnose calls probe web-probe package
 # Scripts share object files, so even `make -j check` must build them in order.
 .NOTPARALLEL:
 
 help:
 	@echo 'make build      Build and sign the input method'
+	@echo 'make package    Build the current-user macOS installer package'
 	@echo 'make test       Rebuild the library and run composition/editing checks'
 	@echo 'make check      Check rules, build, test, and verify the signed app'
 	@echo 'make packaging  Check installation and build failures in temporary folders'
@@ -15,6 +16,9 @@ help:
 
 build:
 	@bash scripts/build.sh
+
+package: build
+	@bash scripts/package.sh
 
 test:
 	@bash scripts/test.sh
