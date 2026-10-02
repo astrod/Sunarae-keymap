@@ -37,6 +37,29 @@ macOS 기본 설치 프로그램에서 여는 현재 사용자용 `.pkg`를 추�
 입력기 연결 서비스 재시작으로도 풀리지 않았고, `imklaunchagent`에는
 `LaunchInputMethod() Error, status=-50`가 남았다.
 
-로그아웃·다시 로그인 후 새 입력기 등록을 확인해야 한다. 이번 설치본의 사용 승인과
-실제 한글 입력·Enter·삭제 시험은 아직 완료하지 못했다. 설치 성공과 입력 동작 확인을 구분한다.
+## 다시 로그인한 뒤 입력 확인
+
+사용자가 로그아웃·다시 로그인하고 입력 소스를 추가한 뒤
+`registered=true enabled=true selected=true`와 새 ID를 확인했다.
+승인 창의 표시·승인 과정은 직접 관찰하지 않았다.
+
+첫 시험에서는 순아래를 선택했어도 영문이 나왔다. 기본 두벌식으로 전환해 한글 입력을
+확인한 뒤 순아래를 다시 선택하자, 설치 파일을 바꾸지 않고 아래 시험을 통과했다.
+첫 선택 당시 시험창은 비활성 상태였으므로, 이 증상의 원인을 연결 이름이나 설치 파일로
+단정하지 않는다. 앞서 수집한 연결 오류만으로 실제 입력 실패 원인을 확정할 수는 없다.
+
+- NSTextView: `rkk → 까`, Enter 한 번으로 `- 까\n`.
+- WebKit + CodeMirror: `djfuqek → 어렵다`, Enter 한 번으로 `- 어렵다\n- `.
+- 웹 Enter 이벤트: `keyCode=13`, `isComposing=false`, 편집기 `composing=false`.
+- 웹 연속 삭제: `ㄹㄹㄹㄹㄹ` 입력 직후 Backspace 다섯 번으로 모두 제거.
+- 삭제 직후 `rkk → 까` 입력, Backspace로 `까 → 가 → ㄱ → 빈칸` 확인.
+
+글자 입력·Enter에서는 조합 표시를 유지하지 않았다. 삭제 과정에서는 WebKit의
+`deleteCompositionText`와 `compositionend` 이벤트가 발생했지만, 편집기의
+`composing` 상태는 false였으며 삭제 뒤 글자가 남지 않았다.
+
+시험창을 닫은 뒤에도 순아래가 활성화·선택된 상태를 확인했다. 이번 실제 입력 시험은
+전용 NSTextView·WebKit 시험창에서 진행했다. SilverBullet·Chrome·Codex 각각에서
+직접 입력하거나 Esc·사용자 지정 전환 키를 다시 시험한 것은 아니다.
+
 `.pkg`는 Developer ID 서명·공증을 받지 않았다.
