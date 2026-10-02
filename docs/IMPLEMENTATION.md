@@ -1,4 +1,4 @@
-# Sunarae 0.3.2 architecture
+# Sunarae 0.4.0 architecture
 
 The application keeps the registered input-source ID `local.inputmethod.Dukkeobi` for upgrades, while the app path, executable, controller class, visible name and icon now use Sunarae / 두벌식 순아래. The source directory remains `dukkeobi` so existing workspace paths stay valid.
 
@@ -11,6 +11,14 @@ The ordered-deletion behavior from 0.2.9 stays in `TextDelivery.removeLast`. The
 `InputSettings` stores an opt-in Boolean for bare Escape / Control-[ to select ABC. `InputSession` finishes composition, calls the source-selection callback while its reentrancy guard is active, then passes the original event to the client. `InputSource` selects an already enabled ABC through TIS; it never enables or registers a source. The sandbox permits only the local `com.apple.tsm.portname` lookup needed to notify the focused editor. No network, Accessibility or Input Monitoring access is added.
 
 Unlike the withdrawn 0.3.1, there is no pass-through latch, internal English mode, or current-source query in key handling. A later key delivered to the same session can compose Korean without waiting for an activation callback. This avoids making an input-source cache query a condition for Korean input. It does not impose ordering on events already queued by another process; rapid exit-and-command sequences still need live checks.
+
+`GlobalHotKey` registers one chosen chord with Carbon's `RegisterEventHotKey`, including press and release handlers. A repeat gate allows one switch per press. Registration uses the exclusive option, checks enabled symbolic system shortcuts, and claims the new key before releasing the previous key. A failed replacement leaves the previous registration and stored preference intact. It uses no event tap, synthetic key event, or global key monitor.
+
+`ShortcutManager` restores the stored choice at process startup and persists changes only after registration succeeds. Its backend and toggle action can be replaced in tests, so automated checks never claim real hotkeys or change input sources. A toggle reads the current TIS source once, chooses ABC when Sunarae is selected and Sunarae otherwise, commits the active controller before leaving Korean, then selects an already enabled source. This current-source query runs only on the explicit hotkey, never on ordinary typing.
+
+`ShortcutSettingsController` presents an AppKit panel from the IMK menu. It pauses registration while open, records a key only through a local monitor restricted to its own window, and restores the saved choice on close. Applying saves a successful registration; cancelling leaves the preference alone. Only a key code and supported modifier mask are persisted. Modifier-only and Fn shortcuts are excluded; bare function keys and Control/Option/Command chords are supported. Esc and Control-[ remain reserved for the existing one-way exit action.
+
+The input method must be running to receive its global hotkey, so users select Sunarae once after login. No login item, helper process, additional entitlement, Accessibility or Input Monitoring permission is added. Remapping tools and firmware can intercept keys before Carbon; registration cannot detect all such conflicts.
 
 The C vendor contains only the former upstream base plus the Sunarae table, repeated-vowel branch, and one snapshot helper. The old direct-final and reverse-order patches are gone. The reference data and engine source revisions are pinned in `spec/sources.json`; normal builds are offline.
 

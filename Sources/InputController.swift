@@ -32,6 +32,9 @@ private final class IMKClient: TextClient {
 @objc(SunaraeInputController)
 final class InputController: IMKInputController {
     private let session = InputSession()
+    private static weak var active: InputController?
+
+    static func commitActiveComposition() { active?.commitComposition(nil) }
 
     override func menu() -> NSMenu! {
         let menu = NSMenu()
@@ -40,12 +43,26 @@ final class InputController: IMKInputController {
                               action: #selector(toggleEscapeSwitch(_:)), keyEquivalent: "")
         item.state = InputSettings.shared.switchToABCOnEscape ? .on : .off
         menu.addItem(item)
+        menu.addItem(.separator())
+        let shortcut = ShortcutManager.shared.registeredShortcut?.displayName ?? "사용 안 함"
+        menu.addItem(NSMenuItem(title: "한영 전환 키 설정… (\(shortcut))",
+                               action: #selector(showShortcutSettings(_:)), keyEquivalent: ""))
+        if let error = ShortcutManager.shared.errorMessage {
+            let status = NSMenuItem(title: error, action: nil, keyEquivalent: "")
+            status.isEnabled = false
+            menu.addItem(status)
+        }
         return menu
     }
 
     // IMK routes menu actions to the controller with a command dictionary.
     @objc func toggleEscapeSwitch(_ sender: Any?) {
         InputSettings.shared.switchToABCOnEscape.toggle()
+    }
+
+    @objc func showShortcutSettings(_ sender: Any?) {
+        Self.commitActiveComposition()
+        ShortcutSettingsController.shared.show()
     }
 
     override func recognizedEvents(_ sender: Any!) -> Int {
@@ -66,6 +83,7 @@ final class InputController: IMKInputController {
 
     override func activateServer(_ sender: Any!) {
         super.activateServer(sender)
+        Self.active = self
         // Preserve familiar QWERTY Command shortcuts while Korean is active.
         (sender as? IMKTextInput)?.overrideKeyboard(withKeyboardNamed: InputSource.abcID)
     }
@@ -78,6 +96,7 @@ final class InputController: IMKInputController {
 
     override func deactivateServer(_ sender: Any!) {
         commitComposition(sender)
+        if Self.active === self { Self.active = nil }
         super.deactivateServer(sender)
     }
 

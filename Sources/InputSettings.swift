@@ -13,4 +13,21 @@ final class InputSettings {
         get { defaults.bool(forKey: escapeKey) }
         set { defaults.set(newValue, forKey: escapeKey) }
     }
+
+    var toggleShortcut: KeyboardShortcut? {
+        get {
+            guard let data = defaults.data(forKey: "toggleShortcut"),
+                  let value = try? JSONDecoder().decode(KeyboardShortcut.self, from: data),
+                  value.validationError == nil else { return nil }
+            return value
+        }
+        set {
+            guard let value = newValue, value.validationError == nil,
+                  let data = try? JSONEncoder().encode(value) else {
+                defaults.removeObject(forKey: "toggleShortcut")
+                return
+            }
+            defaults.set(data, forKey: "toggleShortcut")
+        }
+    }
 }

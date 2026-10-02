@@ -43,12 +43,31 @@ Backspace는 현재 글자의 마지막 입력을 되돌립니다. `까(rkk)→�
 
 켜 두면 `Esc` 또는 `Ctrl+[`를 누를 때 현재 글자를 확정하고 macOS에 ABC 전환을 요청합니다.
 원래 키는 앱에 넘기므로 Vim의 일반 모드 전환에도 사용합니다.
-한글로 돌아갈 때는 기존 한영 전환 키를 사용합니다. 별도의 내부 영문 모드나 한영 전환 키 설정은 없습니다.
+한글로 돌아갈 때는 기존 한영 전환 키나 아래에서 지정한 키를 사용합니다. 별도의 내부 영문 모드는 없습니다.
 
 Vim 여부와 관계없이 순아래가 키를 받는 모든 앱에 적용합니다. 팝업을 닫는 Esc도 ABC 전환을 요청합니다.
 Shift·Option·Command 등을 함께 누른 다른 단축키는 그대로 둡니다.
 ABC가 입력 소스 목록에 없거나 전환 요청에 실패하면 한글 입력을 계속할 수 있고 원래 키도 앱에 넘깁니다.
 0.3.1에서 사용한 전환 후 키 통과 상태는 제거했습니다. 실제 전환 시점은 macOS와 입력창이 처리합니다.
+
+### 한영 전환 키 지정
+
+1. 순아래를 선택하고 macOS 입력 메뉴에서 **한영 전환 키 설정…**을 엽니다.
+2. **키 입력하기**를 누르고 사용할 키를 누릅니다.
+3. 표시된 키를 확인하고 **적용**을 누릅니다. **사용 안 함 → 적용**으로 해제할 수 있습니다.
+
+F1–F20은 단독으로 지정할 수 있고, 일반 키는 Control·Option·Command 중 하나와 조합합니다.
+Shift도 함께 넣을 수 있습니다. Shift 단독 조합, 수정키 하나만 누르기, Fn 조합은 지원하지 않습니다.
+Esc와 Ctrl+[는 위의 ABC 전환 기능에 남겨 둡니다. 키 이름은 두벌식과 같은 QWERTY 위치를 기준으로 표시합니다.
+
+지정한 키는 **순아래 → ABC, ABC 또는 다른 입력기 → 순아래**로 실제 입력 소스를 바꿉니다.
+원래 문자나 앱 단축키로는 전달하지 않습니다. 길게 눌러도 한 번만 전환합니다.
+설정은 다시 실행해도 유지하며, 기본값은 사용 안 함입니다. 설정 창을 열어 둔 동안에는 등록을 잠시 해제합니다.
+
+이미 쓰는 macOS 단축키와 등록 충돌은 알립니다. Karabiner나 키보드 펌웨어에서 바꾸는 키는 모두 감지할 수 없습니다.
+F18을 기존 방식으로 쓰고 있다면, 순아래에 F18을 지정하기 전에 기존 한영 전환 설정을 해제해야 합니다.
+로그인 직후에는 **순아래를 한 번 선택해 앱을 실행**해야 이 단축키를 받을 수 있습니다.
+별도 로그인 항목이나 상주 도우미는 추가하지 않습니다.
 
 ## 설치·업데이트·삭제
 
@@ -125,6 +144,8 @@ make web-probe   # 시험창 + CodeMirror 빌드
 - `Sources/KeyMap.swift`: macOS 키 위치와 Shift 해석.
 - `Sources/InputSession.swift`: 키 처리, 확정, 중첩 호출 방지.
 - `Sources/InputSettings.swift`, `Sources/InputSource.swift`: Esc 전환 설정과 macOS ABC 선택 요청.
+- `Sources/KeyboardShortcut.swift`, `Sources/GlobalHotKey.swift`, `Sources/ShortcutManager.swift`: 한영 전환 키 검증·등록·저장과 실제 입력 소스 전환.
+- `Sources/ShortcutSettingsController.swift`: 키 지정·변경·해제 창.
 - `Sources/TextDelivery.swift`: 커서·문자 확인, 직접 삽입·교체·삭제, 조합 표시 방식으로 전환.
 - `Sources/TextClient.swift`, `Sources/InputController.swift`: 앱의 텍스트 API와 InputMethodKit 연결.
 - `vendor/libhangul/`: 고정한 한글 엔진과 순아래 변경 사항.
@@ -132,6 +153,7 @@ make web-probe   # 시험창 + CodeMirror 빌드
 
 입력 내용 저장·전송·분석·자동 업데이트 기능이 없습니다. 앱은 네트워크 권한 없이 App Sandbox를 사용합니다.
 손쉬운 사용·입력 모니터링 권한을 요구하지 않습니다. 현재 글자와 연속 삭제에 필요한 상태만 메모리에 두고 조합 종료 시 비웁니다.
+전역 단축키는 지정한 조합 하나만 macOS에 등록합니다. 키를 지정할 때는 설정 창의 입력만 받으며, 설정한 키와 수정키만 저장합니다.
 
 순아래 제작자는 **꼬마집오리**입니다. [제작자 설명](https://sites.google.com/site/tinyduckn/dubeolsig-sun-alae),
 [구현 기준](https://github.com/3beol/libhangul/blob/5244cb30b0f995ff2567ab2ac51dba3e9958a0d2/data/keyboards_info/2set_2noshift.txt),

@@ -18,7 +18,9 @@ import InputMethodKit
         let controller = InputController(server: server, delegate: nil, client: nil)!
         InputSettings.shared.switchToABCOnEscape = false
         let menu = controller.menu()!
-        precondition(menu.items.count == 1)
+        precondition(menu.items.count == 3)
+        precondition(menu.items[2].title.contains("한영 전환 키 설정"))
+        precondition(controller.responds(to: menu.items[2].action))
         let item = menu.items[0]
         precondition(item.state == .off && item.isEnabled)
         precondition(controller.responds(to: item.action))

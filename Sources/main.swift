@@ -2,6 +2,14 @@ import AppKit
 import InputMethodKit
 import Darwin
 
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    // Opening the running input-method app in Finder also opens its settings.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        ShortcutSettingsController.shared.show()
+        return true
+    }
+}
+
 // A local diagnostic on the actual signed executable, with no user input.
 if CommandLine.arguments.contains("--self-check") {
     let examples = ["rkk": "까", "emmt": "뜻", "rjjrr": "꺾", "dult": "옛", "ghafhdn": "홈로우", "dlqfur": "입력", "tlfg": "싫"]
@@ -34,6 +42,8 @@ if CommandLine.arguments.contains("--self-check") {
 }
 
 let app = NSApplication.shared
+let appDelegate = AppDelegate()
+app.delegate = appDelegate
 guard let connection = Bundle.main.object(forInfoDictionaryKey: "InputMethodConnectionName") as? String,
       let identifier = Bundle.main.bundleIdentifier,
       let server = IMKServer(name: connection, bundleIdentifier: identifier) else {
@@ -43,5 +53,6 @@ guard let connection = Bundle.main.object(forInfoDictionaryKey: "InputMethodConn
 if CommandLine.arguments.contains("--check-server") {
     print("InputMethodKit connection ready")
 } else {
+    ShortcutManager.shared.restore()
     withExtendedLifetime(server) { app.run() }
 }
