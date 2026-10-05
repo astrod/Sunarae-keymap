@@ -1,10 +1,16 @@
-# Sunarae 0.5.0 architecture
+# Sunarae 0.5.2 architecture
 
 The app bundle, input-source ID and IMK connection use `local.inputmethod.Sunarae`, `Sunarae.app` and `local.inputmethod.Sunarae_Connection`. The test probe and pasteboard identifiers also use Sunarae.
 
 `KeyMap` maps macOS physical key positions to QWERTY ASCII. `Composer` sends those keys to the pinned `2noshift` engine. It keeps snapshots only for the current syllable's per-key undo and releases them on commit/reset. It has no comma state, contextual final mappings, timers, device checks, or external settings.
 
 `InputSession` guards the entire operation against reentrant IMK calls. It coordinates composition with `TextDelivery`, which owns the document range and text from this session. Before any replacement/deletion, delivery checks the client identity, caret and exact text. A mismatch drops the old state. The first insertion and append use the client's current selection; later replacements use a verified range. Text remains ordinary document text in the direct path, and finishing that path performs no client query or write.
+
+For the current direct composition, an unavailable substring or unexpected caret gets one immediate retry. A readable text mismatch ends composition at once. A successful retry checks the caret again after reading the text; two failed attempts end composition. Normal successful input still uses one caret query and one substring query. This uses no timer, queued key, event-loop wait, or marked text. Enter keeps its query-free, write-free path. The retry also applies to Backspace while a direct composition is active; deletion of earlier committed text keeps its existing checks.
+
+This can recover only when the second attempt returns matching text and caret data. Persistent failures and nonmatching old text still end composition. Consistent stale text and caret replies can hide an actual document change; these queries alone cannot detect it. The checks inject failures into a real in-process NSTextView and do not establish the cause of typing errors in another app.
+
+A plain Space immediately after an active direct composition first verifies that text and caret. On success, the session clears its composition, inserts one space through the same client path as Hangul, and consumes the key. This prevents a web editor from queuing the space behind the next Hangul insertion. Caps Lock does not change this rule. Modified Space, Space without an active direct composition, and failed verification pass through to the app. Enter, Tab, Escape, and clients using marked text keep their existing behavior.
 
 The ordered-deletion behavior from 0.2.9 stays in `TextDelivery.removeLast`. The IMK adapter deletes a verified owned range through an empty `setMarkedText` replacement. This prevents the last native Backspace from reaching a web editor after the next IMK insertion. Deleting previous app-owned content still belongs to the app. Clients without document access use marked text as before.
 

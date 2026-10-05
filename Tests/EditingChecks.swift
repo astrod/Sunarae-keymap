@@ -48,7 +48,8 @@ func runEditingChecks() {
         case "client": target = ViewClient(); target.insert("ㄹㄹ")
         case "commit": session.commit(to: client)
         case "shortcut": _ = session.input(keyCode: 8, modifiers: .command, client: client)
-        default: _ = session.input(keyCode: 49, modifiers: [], client: client); client.insert(" ")
+        default:
+            if !session.input(keyCode: 49, modifiers: [], client: client) { client.insert(" ") }
         }
         let before = target.view.string
         expect(String(session.input(keyCode: 51, modifiers: [], client: target)), "false", "delete after \(change) belongs to app")

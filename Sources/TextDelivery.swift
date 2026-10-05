@@ -21,6 +21,11 @@ final class TextDelivery {
         return false
     }
 
+    var isDirect: Bool {
+        if case .direct = output { return true }
+        return false
+    }
+
     func reset() {
         output = .none
         clientID = nil
@@ -37,33 +42,33 @@ final class TextDelivery {
         }
         switch output {
         case let .direct(range, text, provisional):
-            let caret = client.selectedRange
-            guard caret.location != NSNotFound, caret.location >= 0, caret.length == 0 else {
-                reset()
-                return false
-            }
-            var candidate = range
-            if caret.location != NSMaxRange(range) {
-                guard provisional, caret.location >= text.utf16.count else {
-                    reset()
-                    return false
+            // Retry one unavailable read or unexpected caret before dropping
+            // composition. Do not wait or run the event loop between attempts.
+            for attempt in 0..<2 {
+                let caret = client.selectedRange
+                guard caret.location != NSNotFound, caret.location >= 0, caret.length == 0 else {
+                    continue
                 }
-                // The first insert uses the client's current selection. A web
-                // client's cached selection may predate that insert. Resolve
-                // its position once, using the exact text beside the new caret.
-                // Clicks, navigation keys and client changes end this state.
-                candidate = NSRange(location: caret.location - text.utf16.count,
-                                    length: text.utf16.count)
-            }
-            // Choose the range first, then query it once. A mismatch at the
-            // expected caret cannot be fixed by querying that same range again.
-            if client.text(in: candidate) == text {
+                var candidate = range
+                if caret.location != NSMaxRange(range) {
+                    guard provisional, caret.location >= text.utf16.count else { continue }
+                    // First insertions and appends use the client's current
+                    // selection. Resolve their position once from the text.
+                    candidate = NSRange(location: caret.location - text.utf16.count,
+                                        length: text.utf16.count)
+                }
+                guard let observed = client.text(in: candidate) else { continue }
+                // A concrete mismatch ends composition without another query.
+                guard observed == text else { reset(); return false }
+                // Extra client calls can move the caret. Check it again after
+                // a retry before allowing the replacement or deletion.
+                if attempt > 0, client.selectedRange != caret { reset(); return false }
                 output = .direct(candidate, text, provisional: false)
                 recentEnd = NSMaxRange(candidate)
-            } else {
-                reset()
-                return false
+                return true
             }
+            reset()
+            return false
         case .marked(true):
             let range = client.markedRange
             if range.location == NSNotFound || range.length == 0 { reset(); return false }

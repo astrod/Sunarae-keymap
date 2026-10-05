@@ -39,8 +39,10 @@ final class ViewClient: TextClient {
     var ignoreEmptyReplacement = false
     var beforeInsert: (() -> Void)?
     var staleSelection: NSRange?
+    var unavailableTextReads = 0
     var onSelectionRead: (() -> Void)?
     var onTextRead: (() -> Void)?
+    var afterTextRead: (() -> Void)?
     var onMarkedRead: (() -> Void)?
     var selectedRange: NSRange {
         selectionReadCount += 1
@@ -59,8 +61,14 @@ final class ViewClient: TextClient {
     func text(in range: NSRange) -> String? {
         textReadCount += 1
         let callback = onTextRead; onTextRead = nil; callback?()
+        if unavailableTextReads > 0 {
+            unavailableTextReads -= 1
+            return nil
+        }
         guard supportsText else { return nil }
-        return view.attributedSubstring(forProposedRange: range, actualRange: nil)?.string
+        let text = view.attributedSubstring(forProposedRange: range, actualRange: nil)?.string
+        let after = afterTextRead; afterTextRead = nil; after?()
+        return text
     }
     func insert(_ text: String, replacing range: NSRange) {
         insertCount += 1
@@ -90,8 +98,9 @@ func type(_ keys: String, session: InputSession, client: ViewClient) {
             let flags: NSEvent.ModifierFlags = key == position ? [] : .shift
             if !session.input(keyCode: code, modifiers: flags, client: client) { client.insert(String(key)) }
         } else {
-            _ = session.input(keyCode: key == " " ? 49 : 36, modifiers: [], client: client)
-            client.insert(String(key))
+            if !session.input(keyCode: key == " " ? 49 : 36, modifiers: [], client: client) {
+                client.insert(String(key))
+            }
         }
     }
 }

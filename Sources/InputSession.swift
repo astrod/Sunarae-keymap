@@ -63,6 +63,15 @@ final class InputSession {
             delivery.update(committed: "", preedit: composer.preedit, client: client)
             return true
         }
+        if keyCode == 49,
+           modifiers.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock).isEmpty,
+           delivery.isDirect, delivery.reconcile(client) {
+            // A web editor may queue an unhandled Space behind the next IMK
+            // insertion. Keep this boundary on the same path as Hangul.
+            finish(to: client)
+            client.insert(" ")
+            return true
+        }
         guard let key = KeyMap.ascii(keyCode: keyCode, shifted: modifiers.contains(.shift)),
               key.isASCIIHangulKey else {
             finish(to: client)

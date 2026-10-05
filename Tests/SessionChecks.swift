@@ -4,7 +4,7 @@ func runSessionChecks() {
     // Direct text is already in the document: finishing only clears local state.
     // Marked text still needs its safety check before it can be committed.
     let finishingKeys: [(String, UInt16, NSEvent.ModifierFlags)] = [
-        ("Enter", 36, []), ("Space", 49, []), ("Tab", 48, []),
+        ("Enter", 36, []), ("Shift-Space", 49, .shift), ("Tab", 48, []),
         ("Escape", 53, []), ("Control-[", 33, .control),
         ("Left", 123, []), ("Command-C", 8, .command),
         ("Control-Space", 49, .control), ("Option-R", 15, .option)
