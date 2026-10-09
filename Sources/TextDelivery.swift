@@ -3,6 +3,9 @@ import Foundation
 /// Owns only text written by this session. Direct output stays in the document
 /// without a marked range; clients without document access use marked text.
 final class TextDelivery {
+    enum Reconciliation {
+        case valid, unavailable, changed
+    }
     private enum Output {
         case none
         case direct(NSRange, String, provisional: Bool)
@@ -10,6 +13,7 @@ final class TextDelivery {
     }
     private var output = Output.none
     private var clientID: ObjectIdentifier?
+    private var recoveryCaret: NSRange?
     // This uninterrupted session's own direct output. Keep deletion on
     // the same text-client path as insertion, including committed jamo.
     // Navigation, shortcuts, focus changes and document mismatches clear it.
@@ -29,6 +33,7 @@ final class TextDelivery {
     func reset() {
         output = .none
         clientID = nil
+        recoveryCaret = nil
         recentText = ""
         recentEnd = nil
     }
@@ -36,22 +41,41 @@ final class TextDelivery {
     /// Replace only the text we last wrote, at the caret where we left it.
     /// Cursor movement, app edits, and client changes end the local composition.
     func reconcile(_ client: TextClient) -> Bool {
+        let result = reconcileForInput(client)
+        if result != .valid { reset() }
+        return result == .valid
+    }
+
+    /// A missing reply alone does not establish that the document changed.
+    /// Keep the anchor for a later check, without allowing a replacement yet.
+    func reconcileForInput(_ client: TextClient, verifyCaretAfterRead: Bool = false) -> Reconciliation {
         if let clientID, clientID != client.identity {
             reset()
-            return false
+            return .changed
         }
         switch output {
         case let .direct(range, text, provisional):
-            // Retry one unavailable read or unexpected caret before dropping
-            // composition. Do not wait or run the event loop between attempts.
+            var sawChangedCaret = false
+            var lastCaret: NSRange?
             for attempt in 0..<2 {
                 let caret = client.selectedRange
-                guard caret.location != NSNotFound, caret.location >= 0, caret.length == 0 else {
+                guard caret.location != NSNotFound, caret.location >= 0,
+                      caret.length != NSNotFound else { continue }
+                guard caret.length == 0 else {
+                    sawChangedCaret = true
                     continue
                 }
+                if let recoveryCaret, caret != recoveryCaret {
+                    sawChangedCaret = true
+                    continue
+                }
+                lastCaret = caret
                 var candidate = range
                 if caret.location != NSMaxRange(range) {
-                    guard provisional, caret.location >= text.utf16.count else { continue }
+                    guard provisional, caret.location >= text.utf16.count else {
+                        sawChangedCaret = true
+                        continue
+                    }
                     // First insertions and appends use the client's current
                     // selection. Resolve their position once from the text.
                     candidate = NSRange(location: caret.location - text.utf16.count,
@@ -59,19 +83,30 @@ final class TextDelivery {
                 }
                 guard let observed = client.text(in: candidate) else { continue }
                 // A concrete mismatch ends composition without another query.
-                guard observed == text else { reset(); return false }
+                guard observed == text else { reset(); return .changed }
                 // Extra client calls can move the caret. Check it again after
                 // a retry before allowing the replacement or deletion.
-                if attempt > 0, client.selectedRange != caret { reset(); return false }
+                if attempt > 0 || verifyCaretAfterRead {
+                    let confirmedCaret = client.selectedRange
+                    if confirmedCaret.location == NSNotFound || confirmedCaret.length == NSNotFound {
+                        recoveryCaret = caret
+                        return .unavailable
+                    }
+                    if confirmedCaret != caret { reset(); return .changed }
+                }
                 output = .direct(candidate, text, provisional: false)
+                recoveryCaret = nil
                 recentEnd = NSMaxRange(candidate)
-                return true
+                return .valid
             }
-            reset()
-            return false
+            if sawChangedCaret { reset(); return .changed }
+            // A delayed retry must not relocate a provisional first insertion
+            // to another occurrence of the same letter after a cursor move.
+            recoveryCaret = lastCaret ?? NSRange(location: NSMaxRange(range), length: 0)
+            return .unavailable
         case .marked(true):
             let range = client.markedRange
-            if range.location == NSNotFound || range.length == 0 { reset(); return false }
+            if range.location == NSNotFound || range.length == 0 { reset(); return .changed }
         case .none where !recentText.isEmpty:
             let caret = client.selectedRange
             let last = String(recentText.last!)
@@ -80,12 +115,12 @@ final class TextDelivery {
                   client.text(in: NSRange(location: caret.location - last.utf16.count,
                                          length: last.utf16.count)) == last else {
                 reset()
-                return false
+                return .changed
             }
         default:
             break
         }
-        return true
+        return .valid
     }
 
     /// Keep deletion on the same path as insertion. Passing the last owned

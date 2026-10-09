@@ -40,6 +40,7 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 - `Tests/SpaceChecks.swift`: 한글 직후 공백이 다음 자음보다 늦게 처리되는 상황, 공백 직접 삽입과 Enter·수정키·조합 없는 공백 전달 유지.
 - `Tests/CompatibilityChecks.swift`: 문서 교체를 지원하지 않는 Ghostty의 입력 응답, 표준 조합·삭제·확정과 다른 편집기의 직접 표시 유지.
 - `Tests/ReentrancyChecks.swift`: 글자 조회·쓰기 중 들어온 다음 한글 키의 순서, 처리 중 추가 입력, 확정·클라이언트 전환.
+- `Tests/RecoveryChecks.swift`: 누락된 조회 응답 뒤 조합 복구, 재시도 종료, Enter·삭제·전환 처리, 문서 변경 시 보류 입력 취소, 오래된 예약 작업 무효화. 별도 시계로 재시도를 진행하며 실제 입력기를 바꾸지 않습니다.
 - `Tests/EscapeChecks.swift`: 전환 성공·실패 뒤 같은 세션의 한글 입력, 설정 유지·변경, 수정키 조합, 확정 순서와 중첩 호출. 별도 설정 저장소와 전환 대역을 사용합니다.
 - `Tests/MenuChecks.swift`: 별도 실행 파일에서 IMK 메뉴 명령과 체크 표시를 확인합니다. 실제 입력 소스를 선택하지 않습니다.
 - `Tests/ShortcutChecks.swift`: 별도 설정 저장소와 등록 대역으로 키 검증·저장·변경·해제, 실패 시 기존 값 유지, 설정 창 취소, 키 반복과 전환 방향을 확인합니다. 전역 단축키를 실제로 등록하지 않습니다.
@@ -71,7 +72,7 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 `build`, `dist`, `tmp`는 결과물·임시 자료이므로 `.gitignore`에서 제외합니다.
 `build/backups`에는 복구용 백업도 있으니 작업 폴더를 정리할 때 백업을 먼저 따로 보관합니다.
 빌드는 같은 파일시스템의 `.Sunarae-build.*` 폴더에서 결과물을 준비하고 검증 후 `dist` 전체를 교체합니다. 교체 실패 시 이전 폴더를 복원합니다. 복원도 실패하면 백업 폴더를 지우지 않고 위치를 출력합니다.
-현재 설계는 `docs/IMPLEMENTATION.md`, 현재 검증은 `docs/INPUT-VERIFICATION-0.5.3.md`를 봅니다.
+현재 설계는 `docs/IMPLEMENTATION.md`, 현재 검증은 `docs/INPUT-VERIFICATION-0.5.4.md`를 봅니다.
 
 소스는 로컬 Git 저장소로 관리합니다. `7e51efc`는 2026-09-20 정리 작업 전 기준 상태입니다.
 `git diff`로 변경을 확인하고 검사를 통과한 단위로 커밋합니다. 빌드 결과와 임시 폴더는 추적하지 않습니다.

@@ -38,13 +38,16 @@ func runDeliveryChecks() {
     // Recovery is bounded. A readable, different letter is an external edit,
     // so do not keep querying until the old letter happens to appear again.
     for unavailableReads in [2, 100] {
-        let client = ViewClient(), session = InputSession()
+        let clock = RecoveryClock()
+        let client = ViewClient(), session = InputSession(scheduleRecovery: clock.schedule)
         type("rk", session: session, client: client)
         client.unavailableTextReads = unavailableReads
         let reads = client.textReadCount
         type("k", session: session, client: client)
-        expect(client.view.string, "가ㅏ", "persistent query failure ends composition")
+        expect(client.view.string, "가", "missing replies defer the key without changing the document")
         expect(String(client.textReadCount - reads), "2", "at most two substring attempts")
+        clock.drain()
+        expect(client.view.string, unavailableReads == 2 ? "까" : "가ㅏ", "recover a short failure and bound a permanent failure")
         expect(String(client.markCount), "0", "persistent failure does not switch display mode")
     }
     do {
