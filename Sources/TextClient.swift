@@ -3,6 +3,7 @@ import AppKit
 /// A small interface also exercised against a real NSTextView in the tests.
 protocol TextClient: AnyObject {
     var identity: ObjectIdentifier { get }
+    var bundleIdentifier: String? { get }
     var supportsDocumentAccess: Bool { get }
     var selectedRange: NSRange { get }
     var markedRange: NSRange { get }
@@ -14,6 +15,7 @@ protocol TextClient: AnyObject {
 
 extension TextClient {
     var identity: ObjectIdentifier { ObjectIdentifier(self) }
+    var bundleIdentifier: String? { nil }
     func insert(_ text: String) {
         insert(text, replacing: NSRange(location: NSNotFound, length: 0))
     }

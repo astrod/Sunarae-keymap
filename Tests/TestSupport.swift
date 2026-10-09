@@ -28,6 +28,7 @@ final class ViewClient: TextClient {
     }
     var supportsRanges = true
     var supportsText = true
+    var bundleIdentifier: String?
     var supportsDocumentAccess: Bool { supportsRanges && supportsText }
     var insertCount = 0
     var markCount = 0
@@ -38,6 +39,7 @@ final class ViewClient: TextClient {
     var lastInsertedText = ""
     var ignoreEmptyReplacement = false
     var beforeInsert: (() -> Void)?
+    var beforeMark: (() -> Void)?
     var staleSelection: NSRange?
     var unavailableTextReads = 0
     var onSelectionRead: (() -> Void)?
@@ -83,6 +85,7 @@ final class ViewClient: TextClient {
     }
     func mark(_ text: String) {
         markCount += 1
+        let callback = beforeMark; beforeMark = nil; callback?()
         view.setMarkedText(text, selectedRange: NSRange(location: text.utf16.count, length: 0),
                            replacementRange: NSRange(location: NSNotFound, length: 0))
     }
@@ -90,7 +93,7 @@ final class ViewClient: TextClient {
         view.setMarkedText("", selectedRange: NSRange(location: 0, length: 0), replacementRange: range)
     }
 }
-func type(_ keys: String, session: InputSession, client: ViewClient) {
+func type(_ keys: String, session: InputSession, client: TextClient) {
     for key in keys {
         let lower = Character(String(key).lowercased())
         let position: Character = key == "<" ? "," : key == ":" ? ";" : lower

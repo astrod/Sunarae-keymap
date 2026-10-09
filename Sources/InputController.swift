@@ -6,6 +6,7 @@ private final class IMKClient: TextClient {
     let client: IMKTextInput
     init(_ client: IMKTextInput) { self.client = client }
     var identity: ObjectIdentifier { ObjectIdentifier(client) }
+    var bundleIdentifier: String? { client.bundleIdentifier() }
     var supportsDocumentAccess: Bool {
         client.supportsProperty(TSMDocumentPropertyTag(kTSMDocumentSupportDocumentAccessPropertyTag))
     }

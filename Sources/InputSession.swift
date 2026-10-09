@@ -6,6 +6,13 @@ final class InputSession {
     let composer = Composer()
     private let delivery = TextDelivery()
     private var processing = false
+    private var switchingInputSource = false
+    private struct PendingKey {
+        let code: UInt16
+        let modifiers: NSEvent.ModifierFlags
+        let client: TextClient
+    }
+    private var pendingKeys: [PendingKey] = []
     private let settings: InputSettings
 
     init(settings: InputSettings = .shared) {
@@ -22,8 +29,27 @@ final class InputSession {
     func commit(to client: TextClient) {
         guard !processing else { return }
         processing = true
-        defer { processing = false }
+        defer { finishProcessing() }
         finish(to: client)
+    }
+
+    private func finishProcessing() {
+        // Client calls can deliver later key events before the current write
+        // returns. Drain them only after that write and its local state update.
+        // Keep the guard raised while draining; new arrivals join the same FIFO.
+        var index = 0
+        while index < pendingKeys.count {
+            let key = pendingKeys[index]
+            index += 1
+            let handled = processKey(keyCode: key.code, modifiers: key.modifiers,
+                                     client: key.client, selectABC: { false })
+            // This plain Space was consumed while a text operation was active.
+            // If no direct composition remains (e.g. marked text or a second
+            // space), insert it here instead of losing its original event.
+            if !handled, key.code == 49 { key.client.insert(" ") }
+        }
+        pendingKeys.removeAll(keepingCapacity: true)
+        processing = false
     }
 
     private func finish(to client: TextClient) {
@@ -39,11 +65,31 @@ final class InputSession {
     // Key repeats use the same composition rules as separate key presses.
     func input(keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
                client: TextClient, selectABC: () -> Bool = { false }) -> Bool {
-        guard !processing else { return false }
+        if processing {
+            // Returning false would let the app insert a later letter or plain
+            // Space ahead of the text operation still in progress. Other keys
+            // keep their original events, including modified Space and Return.
+            guard !switchingInputSource,
+                  modifiers.intersection([.command, .control, .option]).isEmpty else { return false }
+            let letter = KeyMap.ascii(keyCode: keyCode, shifted: modifiers.contains(.shift))?.isASCIIHangulKey == true
+            let space = keyCode == 49 && modifiers.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock).isEmpty
+            guard letter || space else { return false }
+            pendingKeys.append(PendingKey(code: keyCode, modifiers: modifiers, client: client))
+            return true
+        }
         processing = true
-        defer { processing = false }
+        defer { finishProcessing() }
+        return processKey(keyCode: keyCode, modifiers: modifiers, client: client, selectABC: selectABC)
+    }
+
+    private func processKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags,
+                            client: TextClient, selectABC: () -> Bool) -> Bool {
         if KeyMap.isEscapeShortcut(keyCode: keyCode, modifiers: modifiers),
            settings.switchToABCOnEscape {
+            // Keys delivered during the switch belong to the new input source
+            // (for example a Vim command), not this Hangul queue.
+            switchingInputSource = true
+            defer { switchingInputSource = false }
             // Finish before TIS can reenter deactivateServer. The original
             // Escape still reaches the editor. Do not keep an English mode:
             // every later key delivered to this session can compose Korean,

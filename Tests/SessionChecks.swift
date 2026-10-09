@@ -236,10 +236,10 @@ func runSessionChecks() {
         let client = ViewClient(), session = InputSession()
         type("r", session: session, client: client)
         client.onTextRead = {
-            expect(String(session.input(keyCode: 1, modifiers: [], client: client)), "false", "nested key is not processed twice")
+            expect(String(session.input(keyCode: 1, modifiers: [], client: client)), "true", "nested Hangul key is queued")
         }
         type("k", session: session, client: client)
-        expect(client.view.string, "가", "nested key query preserves outer composition")
+        expect(client.view.string, "간", "nested key follows outer composition exactly once")
     }
     for direct in [true, false] {
         let client = ViewClient(), session = InputSession()

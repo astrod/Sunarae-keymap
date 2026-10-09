@@ -12,7 +12,7 @@ core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/KeyboardShortc
 app_sources=(Sources/InputSource.swift Sources/GlobalHotKey.swift Sources/ShortcutManager.swift
              Sources/ShortcutSettingsController.swift Sources/InputController.swift)
 check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/DeliveryChecks.swift Tests/SpaceChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
-               Tests/EditingChecks.swift Tests/main.swift)
+               Tests/EditingChecks.swift Tests/CompatibilityChecks.swift Tests/ReentrancyChecks.swift Tests/main.swift)
 swift_flags=(-swift-version 5 -target "$swift_target" -I vendor/libhangul "$library")
 
 build_library() {

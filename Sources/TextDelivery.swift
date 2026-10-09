@@ -116,7 +116,11 @@ final class TextDelivery {
             guard !committed.isEmpty || !preedit.isEmpty else { return }
             clientID = client.identity
             let selection = client.selectedRange
-            if client.supportsDocumentAccess,
+            // Ghostty exposes selection text for services such as Quick Look,
+            // not an editable document. It ignores insertText replacementRange,
+            // so it needs standard marked composition even if TSM advertises
+            // document access. Do not commit individual jamo to its terminal.
+            if client.bundleIdentifier != "com.mitchellh.ghostty", client.supportsDocumentAccess,
                selection.location != NSNotFound, selection.length != NSNotFound,
                selection.location >= 0, selection.length >= 0,
                selection.length <= Int.max - selection.location {
