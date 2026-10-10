@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help build test check rules packaging diagnose calls probe web-probe package
+.PHONY: help build test check rules packaging diagnose probe web-probe package
 # Scripts share object files, so even `make -j check` must build them in order.
 .NOTPARALLEL:
 
@@ -10,7 +10,6 @@ help:
 	@echo 'make check      Check rules, build, test, and verify the signed app'
 	@echo 'make packaging  Check installation and build failures in temporary folders'
 	@echo 'make diagnose   Show installed/build versions, signatures, and input-source state'
-	@echo 'make calls      Count text-client calls on fixed test text'
 	@echo 'make probe      Build the native input test window'
 	@echo 'make web-probe  Build the test window with CodeMirror (needs npm)'
 
@@ -34,9 +33,6 @@ check: rules build test packaging
 
 diagnose:
 	@bash scripts/diagnose.sh "$(CURDIR)/dist"
-
-calls:
-	@bash scripts/test-client-calls.sh
 
 probe:
 	@bash scripts/build-probe.sh

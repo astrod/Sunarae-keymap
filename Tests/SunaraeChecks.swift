@@ -73,23 +73,20 @@ func runSunaraeChecks() {
         ("ril", ["갸", "ㄱ", ""]), ("rjjrr", ["꺽", "꺼", "거", "ㄱ", ""]),
         ("rhhor", ["꽤", "꼬", "고", "ㄱ", ""]), ("rktt", ["갓", "가", "ㄱ", ""])
     ] {
-        for direct in [true, false] {
-            let client = ViewClient(), session = InputSession()
-            client.supportsText = direct
-            type(keys, session: session, client: client)
-            expect(client.view.string, compose(keys), "Sunarae client \(keys) \(direct)")
-            for state in states {
-                let handled = session.input(keyCode: 51, modifiers: [], client: client)
-                expect(String(handled), "true", "Sunarae undo consumes key \(keys)")
-                expect(client.view.string, state, "Sunarae undo state \(keys) \(direct)")
-            }
-            type("rkk", session: session, client: client)
-            expect(client.view.string, "까", "Sunarae resumes after undo \(direct)")
-            let writes = client.insertCount
-            expect(String(session.input(keyCode: 36, modifiers: [], client: client)), "false", "Sunarae Enter reaches app")
-            expect(String(client.insertCount - writes), direct ? "0" : "1", "Sunarae Enter writes \(direct)")
-            if direct { expect(session.markedText, "", "Sunarae direct exposes no marked text") }
+        let client = ViewClient(), session = InputSession()
+        type(keys, session: session, client: client)
+        expect(client.view.string, compose(keys), "Sunarae client \(keys)")
+        for state in states {
+            let handled = session.input(keyCode: 51, modifiers: [], client: client)
+            expect(String(handled), "true", "Sunarae undo consumes key \(keys)")
+            expect(client.view.string, state, "Sunarae undo state \(keys)")
         }
+        type("rkk", session: session, client: client)
+        expect(client.view.string, "까", "Sunarae resumes after undo")
+        let writes = client.insertCount
+        expect(String(session.input(keyCode: 36, modifiers: [], client: client)), "false", "Sunarae Enter reaches app")
+        expect(String(client.insertCount - writes), "1", "Sunarae Enter writes")
+        expect(session.markedText, "", "commit clears marked composition")
     }
     // Caps Lock alone does not act like Shift, and normal key-repeat events
     // use the same deterministic Sunarae rules as separate key presses.

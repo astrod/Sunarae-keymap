@@ -8,11 +8,11 @@ target_arch="$(uname -m)"
 swift_target="$target_arch-apple-macosx$minimum_macos"
 library="$build_dir/libhangul.a"
 core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/KeyboardShortcut.swift Sources/InputSettings.swift Sources/TextClient.swift
-              Sources/TextDelivery.swift Sources/InputSession.swift)
+              Sources/InputSession.swift)
 app_sources=(Sources/InputSource.swift Sources/GlobalHotKey.swift Sources/ShortcutManager.swift
              Sources/ShortcutSettingsController.swift Sources/InputController.swift)
-check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/DeliveryChecks.swift Tests/SpaceChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
-               Tests/EditingChecks.swift Tests/CompatibilityChecks.swift Tests/ReentrancyChecks.swift Tests/RecoveryChecks.swift Tests/RecoveryValidationChecks.swift Tests/main.swift)
+check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
+               Tests/EditingChecks.swift Tests/CompatibilityChecks.swift Tests/ReentrancyChecks.swift Tests/main.swift)
 swift_flags=(-swift-version 5 -target "$swift_target" -I vendor/libhangul "$library")
 
 build_library() {

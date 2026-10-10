@@ -14,9 +14,17 @@ const send = row => {
   window.webkit?.messageHandlers?.trace?.postMessage(row);
 };
 function state(current = view) {
+  const selection = current.contentDOM.ownerDocument.getSelection();
   return {text: current.state.doc.toString(), composing: current.composing,
-    selection: current.state.selection.main.head};
+    selection: current.state.selection.main.head,
+    editorSelection: {anchor: current.state.selection.main.anchor, head: current.state.selection.main.head},
+    domSelection: selection ? {collapsed: selection.isCollapsed,
+      anchorOffset: selection.anchorOffset, focusOffset: selection.focusOffset,
+      text: selection.toString()} : null};
 }
+document.addEventListener('selectionchange', () => {
+  if (view && view.hasFocus) send({type: 'selectionchange', ...state()});
+});
 window.resetEditor = (useVim = false) => {
   if (view) view.destroy();
   records = []; report.value = '';

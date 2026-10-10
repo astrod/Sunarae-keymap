@@ -1,32 +1,17 @@
 import AppKit
 import InputMethodKit
-import Carbon
 
 private final class IMKClient: TextClient {
     let client: IMKTextInput
     init(_ client: IMKTextInput) { self.client = client }
     var identity: ObjectIdentifier { ObjectIdentifier(client) }
-    var bundleIdentifier: String? { client.bundleIdentifier() }
-    var supportsDocumentAccess: Bool {
-        client.supportsProperty(TSMDocumentPropertyTag(kTSMDocumentSupportDocumentAccessPropertyTag))
-    }
-    var selectedRange: NSRange { client.selectedRange() }
     var markedRange: NSRange { client.markedRange() }
-    func text(in range: NSRange) -> String? { client.attributedSubstring(from: range)?.string }
-    func insert(_ text: String, replacing range: NSRange) {
-        client.insertText(text, replacementRange: range)
+    func insert(_ text: String) {
+        client.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
     }
-    func mark(_ text: String) {
-        client.setMarkedText(text, selectionRange: NSRange(location: text.utf16.count, length: 0),
+    func mark(_ text: NSAttributedString) {
+        client.setMarkedText(text, selectionRange: NSRange(location: text.length, length: 0),
                              replacementRange: NSRange(location: NSNotFound, length: 0))
-    }
-    func remove(in range: NSRange) {
-        // Web clients may ignore an empty insertText during a key event.
-        // An empty marked replacement deletes this exact range immediately,
-        // without leaving marked text or queueing a native Backspace behind
-        // the next insertText. Do not add a second commit/insert operation.
-        client.setMarkedText("", selectionRange: NSRange(location: 0, length: 0),
-                             replacementRange: range)
     }
 }
 
@@ -76,8 +61,7 @@ final class InputController: IMKInputController {
             return session.input(keyCode: event.keyCode, modifiers: event.modifierFlags,
                                  client: IMKClient(client), selectABC: InputSource.selectABC)
         }
-        // With direct output there may be no marked text for InputMethodKit's
-        // default mouse handling to commit. End our local state on clicks too.
+        // Finish before the click moves the caret or changes the input field.
         commitComposition(sender)
         return false
     }

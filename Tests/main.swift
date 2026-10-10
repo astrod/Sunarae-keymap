@@ -3,12 +3,8 @@ import AppKit
 _ = NSApplication.shared
 for (keys, expected) in sunaraeExamples { expect(compose(keys), expected, keys) }
 runSessionChecks()
-runDeliveryChecks()
-runSpaceChecks()
 runCompatibilityChecks()
 runReentrancyChecks()
-runRecoveryChecks()
-runRecoveryValidationChecks()
 runEscapeChecks()
 runSunaraeChecks()
 runEditingChecks()

@@ -20,79 +20,35 @@ func compose(_ keys: String) -> String {
     return result + composer.flush()
 }
 
-// Exercise client replacement/selection semantics on AppKit's real text view.
+// Exercise marked text and app-owned editing on a real NSTextView.
 final class ViewClient: TextClient {
     let view: NSTextView
     init(view: NSTextView = NSTextView(frame: NSRect(x: 0, y: 0, width: 500, height: 200))) {
         self.view = view
     }
-    var supportsRanges = true
-    var supportsText = true
-    var bundleIdentifier: String?
-    var supportsDocumentAccess: Bool { supportsRanges && supportsText }
     var insertCount = 0
     var markCount = 0
-    var selectionReadCount = 0
-    var textReadCount = 0
     var markedReadCount = 0
-    var lastInsertionRange = NSRange(location: NSNotFound, length: 0)
-    var lastInsertedText = ""
-    var ignoreEmptyReplacement = false
+    var lastMarkedText = NSAttributedString(string: "")
     var beforeInsert: (() -> Void)?
     var beforeMark: (() -> Void)?
-    var staleSelection: NSRange?
-    var staleText: String?
-    var unavailableTextReads = 0
-    var onSelectionRead: (() -> Void)?
-    var onTextRead: (() -> Void)?
-    var afterTextRead: (() -> Void)?
     var onMarkedRead: (() -> Void)?
-    var selectedRange: NSRange {
-        selectionReadCount += 1
-        let callback = onSelectionRead; onSelectionRead = nil; callback?()
-        if let staleSelection {
-            self.staleSelection = nil
-            return staleSelection
-        }
-        return supportsRanges ? view.selectedRange() : NSRange(location: NSNotFound, length: NSNotFound)
-    }
     var markedRange: NSRange {
         markedReadCount += 1
         let callback = onMarkedRead; onMarkedRead = nil; callback?()
         return view.markedRange()
     }
-    func text(in range: NSRange) -> String? {
-        textReadCount += 1
-        let callback = onTextRead; onTextRead = nil; callback?()
-        if unavailableTextReads > 0 {
-            unavailableTextReads -= 1
-            return nil
-        }
-        guard supportsText else { return nil }
-        let text = staleText ?? view.attributedSubstring(forProposedRange: range, actualRange: nil)?.string
-        staleText = nil
-        let after = afterTextRead; afterTextRead = nil; after?()
-        return text
-    }
-    func insert(_ text: String, replacing range: NSRange) {
+    func insert(_ text: String) {
         insertCount += 1
-        lastInsertionRange = range
-        lastInsertedText = text
         let callback = beforeInsert; beforeInsert = nil; callback?()
-        if ignoreEmptyReplacement && text.isEmpty && range.location != NSNotFound { return }
-        // A remote editor may have cleared its document since it reported its
-        // selection. Reject stale ranges instead of throwing an AppKit exception.
-        if range.location != NSNotFound && NSMaxRange(range) > view.string.utf16.count { return }
-        view.insertText(text, replacementRange: range)
+        view.insertText(text, replacementRange: NSRange(location: NSNotFound, length: 0))
     }
-    func mark(_ text: String) {
+    func mark(_ text: NSAttributedString) {
         markCount += 1
+        lastMarkedText = text
         let callback = beforeMark; beforeMark = nil; callback?()
-        view.setMarkedText(text, selectedRange: NSRange(location: text.utf16.count, length: 0),
+        view.setMarkedText(text, selectedRange: NSRange(location: text.length, length: 0),
                            replacementRange: NSRange(location: NSNotFound, length: 0))
-    }
-    func remove(in range: NSRange) {
-        view.setMarkedText("", selectedRange: NSRange(location: 0, length: 0), replacementRange: range)
     }
 }
 func type(_ keys: String, session: InputSession, client: TextClient) {

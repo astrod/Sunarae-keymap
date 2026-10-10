@@ -43,8 +43,11 @@ final class ProbeTextView: NSTextView {
         super.insertText(insertString, replacementRange: replacementRange)
     }
     override func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
-        Trace.shared.write("native.setMarkedText", ["text": stringValue(string), "range": rangeValue(replacementRange)])
+        Trace.shared.write("native.setMarkedText", ["text": stringValue(string),
+            "range": rangeValue(replacementRange), "selectionInMarkedText": rangeValue(selectedRange)])
         super.setMarkedText(string, selectedRange: selectedRange, replacementRange: replacementRange)
+        Trace.shared.write("native.afterMarkedText", ["marked": rangeValue(super.markedRange()),
+            "selection": rangeValue(super.selectedRange())])
     }
     override func unmarkText() { Trace.shared.write("native.unmarkText"); super.unmarkText() }
     override func selectedRange() -> NSRange {
@@ -96,8 +99,6 @@ final class ProbeApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler {
         vimMode.frame = NSRect(x: 745, y: 650, width: 110, height: 32); root.addSubview(vimMode)
         let regression = NSButton(title: "Editor regression", target: self, action: #selector(editorRegression))
         regression.frame = NSRect(x: 860, y: 650, width: 180, height: 32); root.addSubview(regression)
-        let deletion = NSButton(title: "Deletion API check", target: self, action: #selector(deletionRegression))
-        deletion.frame = NSRect(x: 860, y: 616, width: 180, height: 30); root.addSubview(deletion)
         let scroll = NSScrollView(frame: NSRect(x: 12, y: 470, width: 1030, height: 135))
         native.frame = scroll.bounds; native.isRichText = false
         native.font = .systemFont(ofSize: 25)

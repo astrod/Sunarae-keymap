@@ -14,40 +14,34 @@ func runEscapeChecks() {
 
     for enabled in [false, true] {
         settings.switchToABCOnEscape = enabled
-        for direct in [true, false] {
-            for succeeds in [false, true] {
-                for (name, code, flags) in [("Escape", UInt16(53), NSEvent.ModifierFlags()),
-                                            ("Control-[", UInt16(33), .control)] {
-                    let client = ViewClient(), session = InputSession(settings: settings)
-                    client.supportsText = direct
-                    type("rkk", session: session, client: client)
-                    var switches = 0
-                    let selectABC = { () -> Bool in
-                        switches += 1
-                        expect(client.view.string, "까", "text is final before switching")
-                        expect(String(client.view.hasMarkedText()), "false", "no marked text before switching")
-                        expect(String(session.composer.isEmpty), "true", "local state ends before switching")
-                        session.commit(to: client) // TIS may synchronously reenter IMK.
-                        expect(String(session.input(keyCode: 15, modifiers: [], client: client)),
-                               "false", "nested key is not processed twice")
-                        return succeeds
-                    }
-                    let selections = client.selectionReadCount, texts = client.textReadCount
-                    let writes = client.insertCount
-                    let label = "\(name) enabled=\(enabled) direct=\(direct) succeeds=\(succeeds)"
-                    expect(String(session.input(keyCode: code, modifiers: flags, client: client, selectABC: selectABC)),
-                           "false", "original key reaches editor \(label)")
-                    expect(String(switches), enabled ? "1" : "0", "switch count \(label)")
-                    expect(client.view.string, "까", "last syllable preserved \(label)")
-                    expect(String(client.view.hasMarkedText()), "false", "composition ended \(label)")
-                    expect(String(client.selectionReadCount - selections), "0", "no extra caret query \(label)")
-                    expect(String(client.textReadCount - texts), "0", "no extra text query \(label)")
-                    expect(String(client.insertCount - writes), direct ? "0" : "1", "no duplicate commit \(label)")
-                    // A reused session must not need an activation callback or
-                    // a current-source query to accept Korean input again.
-                    type("sk", session: session, client: client)
-                    expect(client.view.string, "까나", "Korean resumes in the same session \(label)")
+        for succeeds in [false, true] {
+            for (name, code, flags) in [("Escape", UInt16(53), NSEvent.ModifierFlags()),
+                                        ("Control-[", UInt16(33), .control)] {
+                let client = ViewClient(), session = InputSession(settings: settings)
+                type("rkk", session: session, client: client)
+                var switches = 0
+                let selectABC = { () -> Bool in
+                    switches += 1
+                    expect(client.view.string, "까", "text is final before switching")
+                    expect(String(client.view.hasMarkedText()), "false", "no marked text before switching")
+                    expect(String(session.composer.isEmpty), "true", "local state ends before switching")
+                    session.commit(to: client) // TIS may synchronously reenter IMK.
+                    expect(String(session.input(keyCode: 15, modifiers: [], client: client)),
+                           "false", "nested key is not processed twice")
+                    return succeeds
                 }
+                let writes = client.insertCount
+                let label = "\(name) enabled=\(enabled) succeeds=\(succeeds)"
+                expect(String(session.input(keyCode: code, modifiers: flags, client: client, selectABC: selectABC)),
+                       "false", "original key reaches editor \(label)")
+                expect(String(switches), enabled ? "1" : "0", "switch count \(label)")
+                expect(client.view.string, "까", "last syllable preserved \(label)")
+                expect(String(client.view.hasMarkedText()), "false", "composition ended \(label)")
+                expect(String(client.insertCount - writes), "1", "no duplicate commit \(label)")
+                // A reused session must not need an activation callback or
+                // a current-source query to accept Korean input again.
+                type("sk", session: session, client: client)
+                expect(client.view.string, "까나", "Korean resumes in the same session \(label)")
             }
         }
     }
