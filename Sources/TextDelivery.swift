@@ -4,7 +4,7 @@ import Foundation
 /// without a marked range; clients without document access use marked text.
 final class TextDelivery {
     enum Reconciliation {
-        case valid, unavailable, changed
+        case valid, unavailable, changed, unconfirmedChange
     }
     private enum Output {
         case none
@@ -14,6 +14,7 @@ final class TextDelivery {
     private var output = Output.none
     private var clientID: ObjectIdentifier?
     private var recoveryCaret: NSRange?
+    private var recoveryHasUnconfirmedChange = false
     // This uninterrupted session's own direct output. Keep deletion on
     // the same text-client path as insertion, including committed jamo.
     // Navigation, shortcuts, focus changes and document mismatches clear it.
@@ -34,6 +35,7 @@ final class TextDelivery {
         output = .none
         clientID = nil
         recoveryCaret = nil
+        recoveryHasUnconfirmedChange = false
         recentText = ""
         recentEnd = nil
     }
@@ -48,9 +50,40 @@ final class TextDelivery {
 
     /// A missing reply alone does not establish that the document changed.
     /// Keep the anchor for a later check, without allowing a replacement yet.
-    func reconcileForInput(_ client: TextClient, verifyCaretAfterRead: Bool = false) -> Reconciliation {
+    func reconcileForInput(_ client: TextClient) -> Reconciliation {
+        let result = check(client, verifyCaretAfterRead: false)
+        if result == .changed { reset() }
+        return result
+    }
+
+    /// Deferred keys have already been consumed. A stale reply must not erase
+    /// them along with the anchor needed to confirm the actual document state.
+    func reconcileDeferred(_ client: TextClient) -> Reconciliation {
+        if recoveryCaret == nil, case let .direct(range, _, _) = output {
+            // Also pin each new range while replaying a queue. Confirmation
+            // must not relocate an append to the same letter elsewhere.
+            recoveryCaret = NSRange(location: NSMaxRange(range), length: 0)
+        }
+        var result = check(client, verifyCaretAfterRead: true)
+        if result == .changed {
+            recoveryHasUnconfirmedChange = true
+            // Confirm once with the original anchor and composition intact.
+            // This is bounded, including at Return/commit and the last retry.
+            result = check(client, verifyCaretAfterRead: true)
+        }
+        if result == .changed { reset() }
+        if result == .valid { recoveryHasUnconfirmedChange = false }
+        if result == .unavailable, recoveryHasUnconfirmedChange {
+            // Missing confirmation is not proof of a safe insertion point.
+            // Retain this evidence across retries so timeout cannot insert
+            // consumed keys into a possibly changed selection or document.
+            return .unconfirmedChange
+        }
+        return result
+    }
+
+    private func check(_ client: TextClient, verifyCaretAfterRead: Bool) -> Reconciliation {
         if let clientID, clientID != client.identity {
-            reset()
             return .changed
         }
         switch output {
@@ -82,8 +115,7 @@ final class TextDelivery {
                                         length: text.utf16.count)
                 }
                 guard let observed = client.text(in: candidate) else { continue }
-                // A concrete mismatch ends composition without another query.
-                guard observed == text else { reset(); return .changed }
+                guard observed == text else { return .changed }
                 // Extra client calls can move the caret. Check it again after
                 // a retry before allowing the replacement or deletion.
                 if attempt > 0 || verifyCaretAfterRead {
@@ -92,21 +124,21 @@ final class TextDelivery {
                         recoveryCaret = caret
                         return .unavailable
                     }
-                    if confirmedCaret != caret { reset(); return .changed }
+                    if confirmedCaret != caret { return .changed }
                 }
                 output = .direct(candidate, text, provisional: false)
                 recoveryCaret = nil
                 recentEnd = NSMaxRange(candidate)
                 return .valid
             }
-            if sawChangedCaret { reset(); return .changed }
+            if sawChangedCaret { return .changed }
             // A delayed retry must not relocate a provisional first insertion
             // to another occurrence of the same letter after a cursor move.
             recoveryCaret = lastCaret ?? NSRange(location: NSMaxRange(range), length: 0)
             return .unavailable
         case .marked(true):
             let range = client.markedRange
-            if range.location == NSNotFound || range.length == 0 { reset(); return .changed }
+            if range.location == NSNotFound || range.length == 0 { return .changed }
         case .none where !recentText.isEmpty:
             let caret = client.selectedRange
             let last = String(recentText.last!)
@@ -114,7 +146,6 @@ final class TextDelivery {
                   caret.location >= last.utf16.count,
                   client.text(in: NSRange(location: caret.location - last.utf16.count,
                                          length: last.utf16.count)) == last else {
-                reset()
                 return .changed
             }
         default:

@@ -41,6 +41,7 @@ final class ViewClient: TextClient {
     var beforeInsert: (() -> Void)?
     var beforeMark: (() -> Void)?
     var staleSelection: NSRange?
+    var staleText: String?
     var unavailableTextReads = 0
     var onSelectionRead: (() -> Void)?
     var onTextRead: (() -> Void)?
@@ -68,7 +69,8 @@ final class ViewClient: TextClient {
             return nil
         }
         guard supportsText else { return nil }
-        let text = view.attributedSubstring(forProposedRange: range, actualRange: nil)?.string
+        let text = staleText ?? view.attributedSubstring(forProposedRange: range, actualRange: nil)?.string
+        staleText = nil
         let after = afterTextRead; afterTextRead = nil; after?()
         return text
     }

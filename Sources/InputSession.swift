@@ -87,8 +87,8 @@ final class InputSession {
 
     private func recoverDeferred(force: Bool) {
         guard let first = deferredKeys.first else { return }
-        let result = delivery.reconcileForInput(first.client, verifyCaretAfterRead: true)
-        if result == .unavailable, !force {
+        let result = delivery.reconcileDeferred(first.client)
+        if (result == .unavailable || result == .unconfirmedChange), !force {
             scheduleRetry()
             return
         }
@@ -100,14 +100,15 @@ final class InputSession {
         // A boundary or the third retry ends the wait. Never replace an
         // unreadable old range; cancel if the app changed the input context.
         for (index, key) in keys.enumerated() {
-            let state = index == 0 ? result : delivery.reconcileForInput(key.client, verifyCaretAfterRead: true)
-            if state == .changed {
-                // These keys arrived before the document/caret changed. Do not
-                // insert them into a new selection or a cleared input field.
+            let state = index == 0 ? result : delivery.reconcileDeferred(key.client)
+            if state == .changed || (state == .unconfirmedChange && force) {
+                // Do not insert old keys into a new selection or cleared field,
+                // including when missing replies prevented confirmation of a
+                // possible change before the wait ended.
                 reset()
                 return
             }
-            if state == .unavailable {
+            if state == .unavailable || state == .unconfirmedChange {
                 if !force {
                     deferredKeys.append(contentsOf: keys[index...])
                     scheduleRetry()
@@ -216,7 +217,7 @@ final class InputSession {
         switch alreadyReconciled ? .valid : delivery.reconcileForInput(client) {
         case .valid: break
         case .changed: composer.reset()
-        case .unavailable:
+        case .unavailable, .unconfirmedChange:
             if mayDefer {
                 deferredKeys.append(PendingKey(code: keyCode, modifiers: modifiers, client: client))
                 scheduleRetry()
