@@ -2,18 +2,24 @@ import AppKit
 import Carbon
 
 final class ShortcutManager {
-    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), toggle: {
+    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), capsLock: CapsLockConfiguration.live(), toggle: {
         InputSource.toggle(beforeLeavingSunarae: InputController.commitActiveComposition)
     })
     private let settings: InputSettings
     private let registration: HotKeyRegistering
+    private let capsLock: CapsLockConfiguring?
     private(set) var errorMessage: String?
     var registeredShortcut: KeyboardShortcut? { registration.shortcut }
     var savedShortcut: KeyboardShortcut? { settings.toggleShortcut }
+    var capsLockEnabled: Bool { settings.capsLockToF18Enabled }
+    var shortcutBeforeCapsLock: KeyboardShortcut? { settings.shortcutBeforeCapsLock }
+    var loginNeedsApproval: Bool { capsLockEnabled && capsLock?.loginNeedsApproval == true }
 
-    init(settings: InputSettings, registration: HotKeyRegistering, toggle: @escaping () -> Bool) {
+    init(settings: InputSettings, registration: HotKeyRegistering, capsLock: CapsLockConfiguring? = nil,
+         toggle: @escaping () -> Bool) {
         self.settings = settings
         self.registration = registration
+        self.capsLock = capsLock
         registration.onPress = { [weak self] in
             if toggle() { self?.errorMessage = nil }
             else {
@@ -24,7 +30,14 @@ final class ShortcutManager {
     }
 
     func restore() {
-        errorMessage = register(settings.toggleShortcut)
+        errorMessage = register(capsLockEnabled ? .capsLockF18 : settings.toggleShortcut)
+        if errorMessage == nil { restoreCapsLockMapping() }
+    }
+
+    func restoreCapsLockMapping() {
+        guard capsLockEnabled, registeredShortcut == .capsLockF18 else { return }
+        do { try capsLock?.restore(); errorMessage = nil }
+        catch { errorMessage = error.localizedDescription }
     }
 
     func suspend() -> String? {
@@ -33,11 +46,29 @@ final class ShortcutManager {
         return error
     }
 
-    @discardableResult func apply(_ shortcut: KeyboardShortcut?) -> String? {
-        let error = register(shortcut)
-        errorMessage = error
-        if error == nil { settings.toggleShortcut = shortcut }
-        return error
+    @discardableResult func apply(_ shortcut: KeyboardShortcut?, capsLockEnabled enabled: Bool = false) -> String? {
+        let target: KeyboardShortcut? = enabled ? .capsLockF18 : shortcut
+        let previous = registration.shortcut
+        if let error = register(target) { errorMessage = error; return error }
+        var ownsLogin = settings.capsLockOwnsLoginItem
+        do {
+            if enabled || capsLockEnabled {
+                guard let capsLock else { throw CapsLockError("Caps Lock 설정을 사용할 수 없어요.") }
+                if enabled { ownsLogin = try capsLock.enable() || ownsLogin }
+                else { try capsLock.disable(removeLoginItem: ownsLogin) }
+            }
+        } catch {
+            let rollbackError = register(previous)
+            errorMessage = error.localizedDescription + (rollbackError.map { "\n이전 전환 키 복원: \($0)" } ?? "")
+            return errorMessage
+        }
+        if enabled && !capsLockEnabled { settings.shortcutBeforeCapsLock = settings.toggleShortcut }
+        if !enabled { settings.shortcutBeforeCapsLock = nil }
+        settings.capsLockOwnsLoginItem = enabled && ownsLogin
+        settings.toggleShortcut = target
+        settings.capsLockToF18Enabled = enabled
+        errorMessage = nil
+        return nil
     }
 
     private func register(_ shortcut: KeyboardShortcut?) -> String? {

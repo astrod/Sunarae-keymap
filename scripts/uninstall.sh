@@ -2,7 +2,7 @@
 set -euo pipefail
 [[ $# == 1 ]] || { echo 'Usage: uninstall.sh ARTIFACT_DIRECTORY' >&2; exit 1; }
 source_tool="$1/Support/input-source"
-installed_app="$HOME/Library/Input Methods/Sunarae.app"
+installed_app="${SUNARAE_INPUT_METHODS_DIR:-$HOME/Library/Input Methods}/Sunarae.app"
 [[ -x "$source_tool" ]] || { echo '삭제 도구가 없어요. 먼저 빌드해 주세요.' >&2; exit 1; }
 if [[ -e "$installed_app" ]]; then
     "$source_tool" inspect "$installed_app" >/dev/null
@@ -12,6 +12,9 @@ if [[ -e "$installed_app" ]]; then
         command_path="$(ps -p "$pid" -o comm= || true)"
         if [[ "$command_path" == "$installed_app/Contents/MacOS/Sunarae" ]]; then kill -TERM "$pid"; fi
     done < <(pgrep -u "$(id -u)" -x Sunarae || true)
+    if [[ "$(/usr/libexec/PlistBuddy -c 'Print :SunaraeCapsLockMappingSupported' "$installed_app/Contents/Info.plist" 2>/dev/null || true)" == true ]]; then
+        "$installed_app/Contents/MacOS/Sunarae" --disable-caps-lock
+    fi
     "$source_tool" trash "$installed_app"
 else
     "$source_tool" disable

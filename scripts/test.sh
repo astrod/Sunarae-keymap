@@ -10,6 +10,6 @@ xcrun swiftc -g "${swift_flags[@]}" -framework AppKit -framework Carbon -framewo
     -o "$build_dir/SunaraeMenuTests"
 "$build_dir/SunaraeMenuTests"
 xcrun swiftc -g "${swift_flags[@]}" -framework AppKit -framework Carbon -framework InputMethodKit \
-    "${core_sources[@]}" "${app_sources[@]}" Tests/ShortcutChecks.swift \
+    "${core_sources[@]}" "${app_sources[@]}" Tests/CapsLockChecks.swift Tests/ShortcutChecks.swift \
     -o "$build_dir/SunaraeShortcutTests"
 "$build_dir/SunaraeShortcutTests"

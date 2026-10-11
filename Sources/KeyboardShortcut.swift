@@ -2,6 +2,7 @@ import AppKit
 import Carbon
 
 struct KeyboardShortcut: Codable, Equatable {
+    static let capsLockF18 = KeyboardShortcut(keyCode: 79, modifiers: 0)
     let keyCode: UInt32
     let modifiers: UInt32
 

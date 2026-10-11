@@ -32,6 +32,46 @@ def executable(file, contents):
 
 
 class PackagingChecks(unittest.TestCase):
+    def test_uninstall_cleans_caps_mapping_before_trash(self):
+        for supported, blocked, cleanup_fails in [(True, False, False), (False, False, False),
+                                                   (True, True, False), (True, False, True)]:
+            with self.subTest(supported=supported, blocked=blocked, cleanup_fails=cleanup_fails), \
+                    tempfile.TemporaryDirectory(prefix='Sunarae uninstall ') as temp:
+                base = Path(temp)
+                artifacts = base / 'artifacts'
+                (artifacts / 'Support').mkdir(parents=True)
+                target = base / 'Input Methods'
+                app = target / 'Sunarae.app'
+                (app / 'Contents/MacOS').mkdir(parents=True)
+                (app / 'Contents/Info.plist').write_bytes(plistlib.dumps(
+                    dict(SunaraeCapsLockMappingSupported=supported)))
+                executable(app / 'Contents/MacOS/Sunarae', '''#!/bin/bash
+echo "$1" >> "$SUNARAE_TEST_LOG"
+[[ "$SUNARAE_TEST_CLEANUP_FAILS" != true ]]
+''')
+                executable(artifacts / 'Support/input-source', '''#!/bin/bash
+echo "$1" >> "$SUNARAE_TEST_LOG"
+case "$1" in
+    inspect) echo local.inputmethod.Sunarae ;;
+    disable-bundle) [[ "$SUNARAE_TEST_BLOCKED" != true ]] ;;
+    trash) exit 0 ;;
+    *) exit 99 ;;
+esac
+''')
+                log = base / 'calls'
+                env = dict(os.environ, SUNARAE_INPUT_METHODS_DIR=str(target), SUNARAE_TEST_LOG=str(log),
+                           SUNARAE_TEST_BLOCKED=str(blocked).lower(),
+                           SUNARAE_TEST_CLEANUP_FAILS=str(cleanup_fails).lower())
+                result = run(['bash', 'scripts/uninstall.sh', str(artifacts)], env=env)
+                expected = ['inspect', 'disable-bundle']
+                if not blocked:
+                    if supported:
+                        expected.append('--disable-caps-lock')
+                    if not cleanup_fails:
+                        expected.append('trash')
+                self.assertEqual(log.read_text().splitlines(), expected)
+                self.assertEqual(result.returncode, int(blocked or cleanup_fails), result.stderr)
+
     def test_package_is_user_only(self):
         result = run(['bash', 'scripts/package.sh'])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

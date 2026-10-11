@@ -9,7 +9,7 @@ swift_target="$target_arch-apple-macosx$minimum_macos"
 library="$build_dir/libhangul.a"
 core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/KeyboardShortcut.swift Sources/InputSettings.swift Sources/TextClient.swift
               Sources/InputSession.swift)
-app_sources=(Sources/InputSource.swift Sources/GlobalHotKey.swift Sources/ShortcutManager.swift
+app_sources=(Sources/InputSource.swift Sources/GlobalHotKey.swift Sources/CapsLockMapping.swift Sources/KeyboardConnectionObserver.swift Sources/ShortcutManager.swift
              Sources/ShortcutSettingsController.swift Sources/InputController.swift)
 check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
                Tests/EditingChecks.swift Tests/CompatibilityChecks.swift Tests/ReentrancyChecks.swift Tests/main.swift)

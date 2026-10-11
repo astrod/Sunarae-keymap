@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 private final class ShortcutPanel: NSPanel {
     override var canBecomeKey: Bool { true }
@@ -11,7 +12,9 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     private let value = NSTextField(labelWithString: "")
     private let message = NSTextField(wrappingLabelWithString: "")
     private let record = NSButton(title: "키 입력하기", target: nil, action: nil)
+    private let caps = NSButton(checkboxWithTitle: "Caps Lock으로 한영 전환", target: nil, action: nil)
     private var candidate: KeyboardShortcut?
+    private var manualCandidate: KeyboardShortcut?
     private var recording = false
     private var monitor: Any?
     private var previousApp: NSRunningApplication?
@@ -25,16 +28,16 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         panel.isReleasedWhenClosed = false
         panel.delegate = self
         let root = panel.contentView!
-        let capsTitle = NSTextField(labelWithString: "Caps Lock으로 전환")
-        capsTitle.font = .boldSystemFont(ofSize: 18)
-        capsTitle.frame = NSRect(x: 24, y: 388, width: 500, height: 26)
-        root.addSubview(capsTitle)
+        caps.font = .boldSystemFont(ofSize: 18)
+        caps.frame = NSRect(x: 24, y: 388, width: 500, height: 26)
+        caps.target = self; caps.action = #selector(capsChanged)
+        root.addSubview(caps)
         let capsHelp = NSTextField(wrappingLabelWithString:
-            "키보드 → 텍스트 입력 → 편집에서\n‘Caps Lock 키로 ABC 입력 소스 전환’을 켜세요.\n짧게 누르면 한영 전환, 길게 누르면 대문자 고정입니다.")
+            "Caps Lock을 F18로 바꾸고, 로그인할 때 순아래를 실행해 다시 적용해요.\n입력 모니터링 권한은 필요 없어요. 대문자 고정 기능은 사라져요.\n끄면 이 매핑을 해제하고 이전 한영 전환 키로 돌아가요.")
         capsHelp.frame = NSRect(x: 24, y: 318, width: 500, height: 60)
         root.addSubview(capsHelp)
-        let capsSettings = NSButton(title: "키보드 설정 열기…", target: self,
-                                    action: #selector(openKeyboardSettings))
+        let capsSettings = NSButton(title: "로그인 항목 설정…", target: self,
+                                    action: #selector(openLoginSettings))
         capsSettings.bezelStyle = .rounded
         capsSettings.frame = NSRect(x: 24, y: 276, width: 190, height: 32)
         root.addSubview(capsSettings)
@@ -70,13 +73,14 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     func show() {
         guard let window else { return }
         if window.isVisible { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
-        // Temporarily release the old chord so it can be recorded again here.
-        if let error = manager.suspend() {
-            let alert = NSAlert(); alert.messageText = error; alert.runModal(); return
-        }
         candidate = manager.savedShortcut
+        manualCandidate = manager.capsLockEnabled ? manager.shortcutBeforeCapsLock : candidate
+        caps.state = manager.capsLockEnabled ? .on : .off
+        record.isEnabled = caps.state == .off
         value.stringValue = candidate?.displayName ?? "사용 안 함"
-        message.stringValue = "설정은 ‘적용’을 눌러야 저장돼요. 다른 도구에서 같은 키를 쓰고 있다면 기존 설정을 해제해 주세요."
+        message.stringValue = manager.errorMessage ?? (manager.loginNeedsApproval
+            ? "현재 매핑은 사용할 수 있어요. 재부팅 뒤에도 쓰려면 ‘로그인 항목 설정’에서 순아래 실행을 허용해 주세요."
+            : "설정은 ‘적용’을 눌러야 저장돼요. 다른 도구에서 같은 키를 쓰고 있다면 기존 설정을 해제해 주세요.")
         previousApp = NSWorkspace.shared.frontmostApplication
         NSApp.setActivationPolicy(.accessory)
         window.center()
@@ -90,21 +94,31 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func beginRecording() {
+        guard caps.state == .off else { return }
+        if let error = manager.suspend() { message.stringValue = error; return }
         recording = true
         record.title = "키를 눌러 주세요"
         message.stringValue = "원하는 키를 누르세요. Esc로 입력을 취소할 수 있어요. 수정키 하나만 누르는 방식은 지원하지 않아요."
     }
 
-    private func endRecording() { recording = false; record.title = "키 입력하기" }
+    private func endRecording() {
+        let wasRecording = recording
+        recording = false; record.title = "키 입력하기"
+        if wasRecording { manager.restore() }
+    }
 
-    @objc private func openKeyboardSettings() {
+    @objc private func openLoginSettings() {
         endRecording()
-        // macOS owns Caps Lock switching. Open its UI without changing system
-        // preferences, registering Caps Lock, or adding a global key monitor.
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard")!
-        if !NSWorkspace.shared.open(url) {
-            message.stringValue = "시스템 설정을 열지 못했어요. 직접 키보드 → 텍스트 입력 → 편집으로 이동해 주세요."
-        }
+        SMAppService.openSystemSettingsLoginItems()
+    }
+
+    @objc private func capsChanged() {
+        endRecording()
+        if caps.state == .on { manualCandidate = candidate; candidate = .capsLockF18 }
+        else { candidate = manualCandidate }
+        record.isEnabled = caps.state == .off
+        value.stringValue = candidate?.displayName ?? "사용 안 함"
+        message.stringValue = "‘적용’을 누르면 Caps Lock 매핑과 로그인 시 실행 설정을 함께 바꿔요. 다른 키 매핑은 유지해요."
     }
 
     private func capture(_ event: NSEvent) {
@@ -127,13 +141,18 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     }
 
     @objc private func disable() {
-        endRecording(); candidate = nil; value.stringValue = "사용 안 함"
+        endRecording(); caps.state = .off; record.isEnabled = true
+        candidate = nil; manualCandidate = nil; value.stringValue = "사용 안 함"
         message.stringValue = "‘적용’을 누르면 순아래의 한영 전환 키를 해제해요. Esc 전환 설정은 유지해요."
     }
 
     @objc private func apply() {
         endRecording()
-        if let error = manager.apply(candidate) { message.stringValue = error; return }
+        if let error = manager.apply(candidate, capsLockEnabled: caps.state == .on) { message.stringValue = error; return }
+        if manager.loginNeedsApproval {
+            message.stringValue = "현재 매핑은 사용할 수 있어요. 재부팅 뒤에도 쓰려면 ‘로그인 항목 설정’에서 순아래 실행을 허용해 주세요."
+            return
+        }
         close()
     }
 
@@ -144,7 +163,6 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         endRecording()
         if let monitor { NSEvent.removeMonitor(monitor); self.monitor = nil }
-        manager.restore()
         previousApp?.activate(options: [])
         previousApp = nil
     }

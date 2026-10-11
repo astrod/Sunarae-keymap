@@ -10,6 +10,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+// The uninstall script uses the installed bundle's settings and registration.
+// Exit before creating an IMK server or claiming any shortcut.
+if CommandLine.arguments.contains("--disable-caps-lock") {
+    let settings = InputSettings.shared
+    if settings.capsLockToF18Enabled {
+        do {
+            try CapsLockConfiguration.live().disable(removeLoginItem: settings.capsLockOwnsLoginItem)
+            settings.toggleShortcut = settings.shortcutBeforeCapsLock
+            settings.shortcutBeforeCapsLock = nil
+            settings.capsLockToF18Enabled = false
+            settings.capsLockOwnsLoginItem = false
+        } catch {
+            fputs("Caps Lock 설정을 해제하지 못했어요: \(error.localizedDescription)\n", stderr)
+            exit(1)
+        }
+    }
+    exit(0)
+}
+
 // A local diagnostic on the actual signed executable, with no user input.
 if CommandLine.arguments.contains("--self-check") {
     let examples = ["rkk": "까", "emmt": "뜻", "rjjrr": "꺾", "dult": "옛", "ghafhdn": "홈로우", "dlqfur": "입력", "tlfg": "싫"]
@@ -51,4 +70,5 @@ guard let connection = Bundle.main.object(forInfoDictionaryKey: "InputMethodConn
     exit(1)
 }
 ShortcutManager.shared.restore()
-withExtendedLifetime(server) { app.run() }
+let keyboardConnections = KeyboardConnectionObserver { ShortcutManager.shared.restoreCapsLockMapping() }
+withExtendedLifetime((server, keyboardConnections)) { app.run() }

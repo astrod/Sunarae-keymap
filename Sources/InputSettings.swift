@@ -15,19 +15,35 @@ final class InputSettings {
     }
 
     var toggleShortcut: KeyboardShortcut? {
-        get {
-            guard let data = defaults.data(forKey: "toggleShortcut"),
-                  let value = try? JSONDecoder().decode(KeyboardShortcut.self, from: data),
-                  value.validationError == nil else { return nil }
-            return value
+        get { shortcut(forKey: "toggleShortcut") }
+        set { saveShortcut(newValue, forKey: "toggleShortcut") }
+    }
+
+    var capsLockToF18Enabled: Bool {
+        get { defaults.bool(forKey: "capsLockToF18Enabled") }
+        set { defaults.set(newValue, forKey: "capsLockToF18Enabled") }
+    }
+    var capsLockOwnsLoginItem: Bool {
+        get { defaults.bool(forKey: "capsLockOwnsLoginItem") }
+        set { defaults.set(newValue, forKey: "capsLockOwnsLoginItem") }
+    }
+    var shortcutBeforeCapsLock: KeyboardShortcut? {
+        get { shortcut(forKey: "shortcutBeforeCapsLock") }
+        set { saveShortcut(newValue, forKey: "shortcutBeforeCapsLock") }
+    }
+
+    private func shortcut(forKey key: String) -> KeyboardShortcut? {
+        guard let data = defaults.data(forKey: key),
+              let value = try? JSONDecoder().decode(KeyboardShortcut.self, from: data),
+              value.validationError == nil else { return nil }
+        return value
+    }
+    private func saveShortcut(_ shortcut: KeyboardShortcut?, forKey key: String) {
+        guard let value = shortcut, value.validationError == nil,
+              let data = try? JSONEncoder().encode(value) else {
+            defaults.removeObject(forKey: key)
+            return
         }
-        set {
-            guard let value = newValue, value.validationError == nil,
-                  let data = try? JSONEncoder().encode(value) else {
-                defaults.removeObject(forKey: "toggleShortcut")
-                return
-            }
-            defaults.set(data, forKey: "toggleShortcut")
-        }
+        defaults.set(data, forKey: key)
     }
 }
