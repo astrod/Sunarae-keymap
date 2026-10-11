@@ -40,6 +40,32 @@ func runEditingChecks() {
         client.view.deleteBackward(nil)
         expect(client.view.string, "기존 글자", "app deletes its own text")
     }
+    // A vowel can carry a final consonant into a new marked syllable. Undo
+    // must affect only that new syllable, even after Sunarae vowel repeats.
+    for (keys, expected, states, prefix) in [
+        ("rksk", "가나", ["가ㄴ", "가"], "가"),
+        ("akfrk", "말가", ["말ㄱ", "말"], "말"),
+        ("rkqtj", "갑서", ["갑ㅅ", "갑"], "갑"),
+        ("rkttk", "갓사", ["갓ㅅ", "갓"], "갓"),
+        ("rkrhk", "가과", ["가고", "가ㄱ", "가"], "가"),
+        ("rkfrul", "갈계", ["갈겨", "갈ㄱ", "갈"], "갈"),
+        ("rkrkk", "가까", ["가가", "가ㄱ", "가"], "가"),
+        ("rkRk", "가까", ["가ㄲ", "가"], "가")
+    ] {
+        let client = ViewClient(), session = InputSession()
+        type(keys, session: session, client: client)
+        expect(client.view.string, expected, "carried final before deletion: \(keys)")
+        for state in states {
+            expect(String(session.input(keyCode: 51, modifiers: [], client: client)), "true", "delete composing key after carry: \(keys)")
+            expect(client.view.string, state, "preserve committed syllable during deletion: \(keys)")
+        }
+        expect(session.markedText, "", "carried syllable fully deleted: \(keys)")
+        expect(String(session.input(keyCode: 51, modifiers: [], client: client)), "false", "committed prefix deletion belongs to app: \(keys)")
+        expect(client.view.string, prefix, "IME leaves committed prefix intact: \(keys)")
+        type("rkk", session: session, client: client)
+        session.commit(to: client)
+        expect(client.view.string, prefix + "까", "retype after deleting carried syllable: \(keys)")
+    }
     // Real AppKit paste/undo commands on isolated NSTextViews. A named
     // pasteboard keeps fixed test text away from the user's general clipboard.
     do {
