@@ -18,14 +18,27 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
 
     init(manager: ShortcutManager = .shared) {
         self.manager = manager
-        let panel = ShortcutPanel(contentRect: NSRect(x: 0, y: 0, width: 550, height: 290),
+        let panel = ShortcutPanel(contentRect: NSRect(x: 0, y: 0, width: 550, height: 440),
                                   styleMask: [.titled, .closable], backing: .buffered, defer: false)
         super.init(window: panel)
         panel.title = "순아래 한영 전환 키"
         panel.isReleasedWhenClosed = false
         panel.delegate = self
         let root = panel.contentView!
-        let title = NSTextField(labelWithString: "ABC ↔ 두벌식 순아래")
+        let capsTitle = NSTextField(labelWithString: "Caps Lock으로 전환")
+        capsTitle.font = .boldSystemFont(ofSize: 18)
+        capsTitle.frame = NSRect(x: 24, y: 388, width: 500, height: 26)
+        root.addSubview(capsTitle)
+        let capsHelp = NSTextField(wrappingLabelWithString:
+            "키보드 → 텍스트 입력 → 편집에서\n‘Caps Lock 키로 ABC 입력 소스 전환’을 켜세요.\n짧게 누르면 한영 전환, 길게 누르면 대문자 고정입니다.")
+        capsHelp.frame = NSRect(x: 24, y: 318, width: 500, height: 60)
+        root.addSubview(capsHelp)
+        let capsSettings = NSButton(title: "키보드 설정 열기…", target: self,
+                                    action: #selector(openKeyboardSettings))
+        capsSettings.bezelStyle = .rounded
+        capsSettings.frame = NSRect(x: 24, y: 276, width: 190, height: 32)
+        root.addSubview(capsSettings)
+        let title = NSTextField(labelWithString: "다른 키로 전환 (ABC ↔ 순아래)")
         title.font = .boldSystemFont(ofSize: 18)
         title.frame = NSRect(x: 24, y: 238, width: 500, height: 26)
         root.addSubview(title)
@@ -83,6 +96,16 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     }
 
     private func endRecording() { recording = false; record.title = "키 입력하기" }
+
+    @objc private func openKeyboardSettings() {
+        endRecording()
+        // macOS owns Caps Lock switching. Open its UI without changing system
+        // preferences, registering Caps Lock, or adding a global key monitor.
+        let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard")!
+        if !NSWorkspace.shared.open(url) {
+            message.stringValue = "시스템 설정을 열지 못했어요. 직접 키보드 → 텍스트 입력 → 편집으로 이동해 주세요."
+        }
+    }
 
     private func capture(_ event: NSEvent) {
         guard !event.isARepeat else { return }
