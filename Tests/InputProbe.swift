@@ -3,7 +3,8 @@ import WebKit
 import Carbon
 
 // An isolated test document. No global event taps, other-app document access,
-// or network requests. Only this window's known sample input is recorded.
+// or network requests. This window's text and input events are recorded;
+// use fixed samples only.
 final class Trace {
     static let shared = Trace()
     let url = Bundle.main.bundleURL.deletingLastPathComponent().appendingPathComponent("input-probe.jsonl")
@@ -69,7 +70,6 @@ final class ProbeApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler {
     let native = ProbeTextView(frame: .zero)
     var web: WKWebView!
     let status = NSTextField(labelWithString: "Select a source and type the fixed sample: djfuqek, then Return")
-    var targetIsWeb = false
     var desiredSource: String?
     var previousSource: String?
     let vimMode = NSButton(checkboxWithTitle: "Vim mode", target: nil, action: nil)
@@ -119,7 +119,7 @@ final class ProbeApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler {
     @objc func selectSource(_ button: NSButton) {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-        targetIsWeb = button.tag >= 2
+        let targetIsWeb = button.tag >= 2
         let id = button.tag % 2 == 0 ? "com.apple.inputmethod.Korean.2SetKorean" : "local.inputmethod.Sunarae"
         desiredSource = id
         Trace.shared.sample = "\(targetIsWeb ? "web" : "native")-\(button.tag % 2 == 0 ? "apple" : "sunarae")"

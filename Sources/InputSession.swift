@@ -3,7 +3,7 @@ import AppKit
 /// Composes only the client's marked text. Committed document text belongs to
 /// the app: this session never reads or replaces a document range.
 final class InputSession {
-    let composer = Composer()
+    private let composer = Composer()
     private var clientID: ObjectIdentifier?
     private var markedRangeReported = false
     private var processing = false

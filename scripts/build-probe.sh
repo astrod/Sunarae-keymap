@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname "$0")/build-common.sh"
-build_library
 mkdir -p "$probe_dir/Contents/MacOS"
-xcrun swiftc "${swift_flags[@]}" -framework AppKit -framework WebKit -framework Carbon \
-    "${core_sources[@]}" Tests/InputProbe.swift \
+# The probe hosts text clients; the installed input method handles composition.
+xcrun swiftc -swift-version 5 -target "$swift_target" -parse-as-library \
+    -framework AppKit -framework WebKit -framework Carbon Tests/InputProbe.swift \
     -o "$probe_dir/Contents/MacOS/InputProbe"
 cat > "$probe_dir/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>

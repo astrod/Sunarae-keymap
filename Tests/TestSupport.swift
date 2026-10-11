@@ -28,13 +28,11 @@ final class ViewClient: TextClient {
     }
     var insertCount = 0
     var markCount = 0
-    var markedReadCount = 0
     var lastMarkedText = NSAttributedString(string: "")
     var beforeInsert: (() -> Void)?
     var beforeMark: (() -> Void)?
     var onMarkedRead: (() -> Void)?
     var markedRange: NSRange {
-        markedReadCount += 1
         let callback = onMarkedRead; onMarkedRead = nil; callback?()
         return view.markedRange()
     }

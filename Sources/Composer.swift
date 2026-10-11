@@ -4,7 +4,6 @@ import CLibHangul
 struct CompositionUpdate {
     let handled: Bool
     let committed: String
-    let preedit: String
 }
 
 /// Sunarae rules live in the pinned libhangul keyboard. This wrapper owns only
@@ -30,7 +29,6 @@ final class Composer {
     }
 
     var preedit: String { Self.text(hangul_ic_get_preedit_string(context)) }
-    var isEmpty: Bool { hangul_ic_is_empty(context) }
 
     private static func text(_ pointer: UnsafePointer<UInt32>?) -> String {
         guard let pointer else { return "" }
@@ -70,7 +68,7 @@ final class Composer {
 
     func input(_ key: Character) -> CompositionUpdate {
         guard let ascii = key.asciiValue, key.isASCIIHangulKey else {
-            return CompositionUpdate(handled: false, committed: flush(), preedit: "")
+            return CompositionUpdate(handled: false, committed: flush())
         }
         guard let snapshot = sunarae_clone(context) else {
             fatalError("Unable to allocate an undo context")
@@ -83,6 +81,6 @@ final class Composer {
             hangul_ic_delete(snapshot)
             clearUndo()
         }
-        return CompositionUpdate(handled: handled, committed: committed, preedit: preedit)
+        return CompositionUpdate(handled: handled, committed: committed)
     }
 }

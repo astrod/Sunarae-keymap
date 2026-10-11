@@ -24,7 +24,7 @@ func runEscapeChecks() {
                     switches += 1
                     expect(client.view.string, "까", "text is final before switching")
                     expect(String(client.view.hasMarkedText()), "false", "no marked text before switching")
-                    expect(String(session.composer.isEmpty), "true", "local state ends before switching")
+                    expect(session.markedText, "", "local state ends before switching")
                     session.commit(to: client) // TIS may synchronously reenter IMK.
                     expect(String(session.input(keyCode: 15, modifiers: [], client: client)),
                            "false", "nested key is not processed twice")

@@ -50,9 +50,5 @@ guard let connection = Bundle.main.object(forInfoDictionaryKey: "InputMethodConn
     fputs("Sunarae could not start its input-method connection.\n", stderr)
     exit(1)
 }
-if CommandLine.arguments.contains("--check-server") {
-    print("InputMethodKit connection ready")
-} else {
-    ShortcutManager.shared.restore()
-    withExtendedLifetime(server) { app.run() }
-}
+ShortcutManager.shared.restore()
+withExtendedLifetime(server) { app.run() }
