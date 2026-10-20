@@ -3,6 +3,9 @@ import InputMethodKit
 import Darwin
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillTerminate(_ notification: Notification) {
+        InputSourceFocusRefresh.shared.cancel()
+    }
     // Opening the running input-method app in Finder also opens its settings.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         ShortcutSettingsController.shared.show()

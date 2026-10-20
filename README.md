@@ -97,6 +97,21 @@ Esc와 Ctrl+[는 위의 ABC 전환 기능에 남겨 둡니다. 키 이름은 두
 다른 도구에서 같은 키를 쓰고 있다면, 순아래에 지정하기 전에 기존 설정을 해제해야 합니다.
 Caps Lock 기능을 끈 상태에서는 로그인 후 **순아래를 한 번 선택해 앱을 실행**해야 이 단축키를 받을 수 있습니다.
 
+### 한영 전환 보완 (실험)
+
+**기본으로 켜져 있습니다.** 순아래에 지정한 전환 키나 위의 Caps Lock 기능으로 한영을 전환할 때,
+입력 소스를 선택한 직후 보이지 않는 작은 패널로 입력 초점을 잠깐 갱신합니다.
+원래 앱을 비활성화하거나 다른 앱으로 전환하는 방식은 사용하지 않습니다.
+한글·영문 양방향과 순아래의 Esc / Ctrl+[ 영문 전환에 적용합니다.
+macOS 자체 전환 키·입력 메뉴로 전환할 때는 순아래의 전환 함수를 거치지 않아 적용하지 않습니다.
+
+창 테두리의 깜빡임을 피하려고 앱을 활성화하지 않는 NSPanel 방식을 사용합니다.
+전환 누락을 실제로 줄이는지는 확인 중입니다. 별도 시험에서는 이미 생긴 누락이 이 패널만으로 회복하지 않았고, 실제 앱 왕복으로 회복했습니다.
+실제 앱 왕복 방식은 이 옵션에 넣지 않았습니다.
+**한영 전환 키 설정… → 한영 전환 보완 (실험)**에서 체크를 해제하고 **적용**을 누르면 끌 수 있습니다.
+직접 꺼 둔 설정은 다음 실행에서도 유지합니다.
+이 설정도 추가 권한, 네트워크 통신, 입력 내용 기록을 요구하지 않습니다.
+
 ## 설치·업데이트·삭제
 
 1. [Releases](https://github.com/astrod/Sunarae-keymap/releases)에서 `Sunarae-버전-arm64.pkg`를 내려받아 엽니다. 배포 파일은 Apple Silicon용입니다.
@@ -191,9 +206,10 @@ make web-probe   # 시험창 + CodeMirror 빌드
   앱은 네트워크 송수신 권한 없이 App Sandbox에서 실행합니다.
 - **조합에 필요한 내용만 메모리에서 처리합니다.** 현재 조합과 한 키씩 되돌리기 상태를 보관하고, 앱의 조합 영역이 유지되는지 확인합니다.
   문서의 글자나 커서 위치를 조회하지 않으며, 조합 종료 시 상태를 비웁니다.
-- **로컬 설정에는 사용자가 정한 값만 저장합니다.** Esc 전환 여부, 한영 전환 키, Caps Lock 설정과 해제 시 복원할 이전 키, 이 기능이 로그인 항목을 추가했는지를 저장합니다.
+- **로컬 설정에는 사용자가 정한 값만 저장합니다.** Esc 전환 여부, 한영 전환 키, 한영 전환 보완 여부, Caps Lock 설정과 해제 시 복원할 이전 키, 이 기능이 로그인 항목을 추가했는지를 저장합니다.
   전역 단축키는 지정한 조합 하나만 macOS에 등록하며, 설정 창에서 키를 지정할 때는 그 창의 키 입력만 받습니다.
   Caps Lock 기능은 키 매핑 속성과 키보드 연결 여부만 다룹니다. 전체 키 입력을 감시하는 기능은 없습니다.
+  한영 전환 보완은 전환 시와 패널이 열려 있는 동안 현재 입력 소스와 활성 앱의 번호만 확인합니다. 앱 사용 내역을 저장하지 않습니다.
 - **진단·오류 로그에는 입력 내용을 넣지 않습니다.** 검사 결과나 입력 소스 전환 실패 상태만 남깁니다.
 
 저장하는 설정은 [`Sources/InputSettings.swift`](Sources/InputSettings.swift)에서 확인할 수 있습니다.
@@ -231,6 +247,7 @@ make web-probe   # 시험창 + CodeMirror 빌드
 - `Sources/InputSession.swift`: 키 처리, 확정, 중첩 호출 방지.
 - `Sources/InputSettings.swift`, `Sources/InputSource.swift`: Esc 전환 설정과 macOS ABC 선택 요청.
 - `Sources/KeyboardShortcut.swift`, `Sources/GlobalHotKey.swift`, `Sources/ShortcutManager.swift`: 한영 전환 키 검증·등록·저장과 실제 입력 소스 전환.
+- `Sources/InputSourceFocusRefresh.swift`: 선택 가능한 비활성 패널 보완과 종료·취소 처리.
 - `Sources/CapsLockMapping.swift`, `Sources/KeyboardConnectionObserver.swift`: Caps Lock 매핑·복원, 로그인 시 실행, 새 키보드 연결 처리.
 - `Sources/ShortcutSettingsController.swift`: 키 지정·변경·해제 창.
 - `Sources/TextClient.swift`, `Sources/InputController.swift`: 앱의 텍스트 API와 InputMethodKit 연결.

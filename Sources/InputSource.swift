@@ -9,11 +9,15 @@ enum InputSource {
         identifier == sunaraeID ? abcID : sunaraeID
     }
 
-    static func toggle(beforeLeavingSunarae: () -> Void) -> Bool {
-        let current = TISCopyCurrentKeyboardInputSource().takeRetainedValue()
-        guard let pointer = TISGetInputSourceProperty(current, kTISPropertyInputSourceID) else { return false }
+    static func currentIdentifier() -> String? {
+        guard let current = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+              let pointer = TISGetInputSourceProperty(current, kTISPropertyInputSourceID) else { return nil }
         let identifier = Unmanaged<CFString>.fromOpaque(pointer).takeUnretainedValue() as String
-        guard !identifier.isEmpty else { return false }
+        return identifier.isEmpty ? nil : identifier
+    }
+
+    static func toggle(beforeLeavingSunarae: () -> Void) -> Bool {
+        guard let identifier = currentIdentifier() else { return false }
         return select(destination(from: identifier), beforeSelection: {
             if identifier == sunaraeID { beforeLeavingSunarae() }
         })
@@ -38,6 +42,8 @@ enum InputSource {
         let status = TISSelectInputSource(source)
         if status != noErr {
             NSLog("Sunarae: could not select input source (status %d).", status)
+        } else {
+            InputSourceFocusRefresh.shared.selected(identifier)
         }
         return status == noErr
     }

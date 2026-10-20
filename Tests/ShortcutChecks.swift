@@ -15,11 +15,15 @@ private final class FakeHotKey: HotKeyRegistering {
     static func main() {
         _ = NSApplication.shared
         runCapsLockChecks()
+        runFocusRefreshChecks()
         let suite = "SunaraeTests.Shortcuts.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let settings = InputSettings(defaults: defaults)
         precondition(settings.toggleShortcut == nil)
+        precondition(settings.refreshFocusOnInputSwitch)
+        settings.refreshFocusOnInputSwitch = false
+        precondition(!InputSettings(defaults: UserDefaults(suiteName: suite)!).refreshFocusOnInputSwitch)
         let f19 = KeyboardShortcut(keyCode: 80, modifiers: 0)
         let chord = KeyboardShortcut(keyCode: 49, modifiers: UInt32(controlKey | optionKey))
         precondition(f19.validationError == nil && f19.displayName == "F19")
@@ -39,7 +43,9 @@ private final class FakeHotKey: HotKeyRegistering {
 
         let registration = FakeHotKey()
         var toggles = 0
-        let manager = ShortcutManager(settings: settings, registration: registration, toggle: { toggles += 1; return true })
+        var focusChanges = 0
+        let manager = ShortcutManager(settings: settings, registration: registration,
+            focusRefreshChanged: { focusChanges += 1 }, toggle: { toggles += 1; return true })
         manager.restore()
         precondition(registration.shortcut == nil)
         precondition(manager.apply(f19) == nil)
@@ -47,15 +53,20 @@ private final class FakeHotKey: HotKeyRegistering {
         precondition(InputSettings(defaults: UserDefaults(suiteName: suite)!).toggleShortcut == f19)
         registration.onPress?()
         precondition(toggles == 1)
+        precondition(manager.apply(f19, focusRefreshEnabled: true) == nil)
+        precondition(manager.focusRefreshEnabled && focusChanges == 1)
+        precondition(InputSettings(defaults: UserDefaults(suiteName: suite)!).refreshFocusOnInputSwitch)
         registration.status = OSStatus(eventHotKeyExistsErr)
-        precondition(manager.apply(chord) != nil)
+        precondition(manager.apply(chord, focusRefreshEnabled: false) != nil)
         precondition(settings.toggleShortcut == f19 && registration.shortcut == f19)
+        precondition(manager.focusRefreshEnabled && focusChanges == 1)
         registration.status = noErr
         precondition(manager.suspend() == nil)
         precondition(registration.shortcut == nil && settings.toggleShortcut == f19)
         manager.restore() // Closing without Apply restores the previous choice.
         precondition(registration.shortcut == f19)
-        precondition(manager.apply(chord) == nil && settings.toggleShortcut == chord)
+        precondition(manager.apply(chord, focusRefreshEnabled: false) == nil && settings.toggleShortcut == chord)
+        precondition(!manager.focusRefreshEnabled && focusChanges == 2)
         registration.status = OSStatus(paramErr)
         precondition(manager.apply(nil) != nil && settings.toggleShortcut == chord)
         registration.status = noErr

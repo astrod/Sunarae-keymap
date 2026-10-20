@@ -14,6 +14,13 @@ final class InputSettings {
         set { defaults.set(newValue, forKey: escapeKey) }
     }
 
+    // Enabled for both new installs and upgrades without an explicit choice.
+    // A saved false must keep the feature off across restarts.
+    var refreshFocusOnInputSwitch: Bool {
+        get { defaults.object(forKey: "refreshFocusOnInputSwitch") as? Bool ?? true }
+        set { defaults.set(newValue, forKey: "refreshFocusOnInputSwitch") }
+    }
+
     var toggleShortcut: KeyboardShortcut? {
         get { shortcut(forKey: "toggleShortcut") }
         set { saveShortcut(newValue, forKey: "toggleShortcut") }

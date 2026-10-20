@@ -13,6 +13,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     private let message = NSTextField(wrappingLabelWithString: "")
     private let record = NSButton(title: "키 입력하기", target: nil, action: nil)
     private let caps = NSButton(checkboxWithTitle: "Caps Lock으로 한영 전환", target: nil, action: nil)
+    private let focusRefresh = NSButton(checkboxWithTitle: "한영 전환 보완 (실험)", target: nil, action: nil)
     private var candidate: KeyboardShortcut?
     private var manualCandidate: KeyboardShortcut?
     private var recording = false
@@ -21,7 +22,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
 
     init(manager: ShortcutManager = .shared) {
         self.manager = manager
-        let panel = ShortcutPanel(contentRect: NSRect(x: 0, y: 0, width: 550, height: 440),
+        let panel = ShortcutPanel(contentRect: NSRect(x: 0, y: 0, width: 550, height: 560),
                                   styleMask: [.titled, .closable], backing: .buffered, defer: false)
         super.init(window: panel)
         panel.title = "순아래 한영 전환 키"
@@ -29,36 +30,42 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         panel.delegate = self
         let root = panel.contentView!
         caps.font = .boldSystemFont(ofSize: 18)
-        caps.frame = NSRect(x: 24, y: 388, width: 500, height: 26)
+        caps.frame = NSRect(x: 24, y: 508, width: 500, height: 26)
         caps.target = self; caps.action = #selector(capsChanged)
         root.addSubview(caps)
         let capsHelp = NSTextField(wrappingLabelWithString:
             "Caps Lock을 F18로 바꾸고, 로그인할 때 순아래를 실행해 다시 적용해요.\n입력 모니터링 권한은 필요 없어요. 대문자 고정 기능은 사라져요.\n끄면 이 매핑을 해제하고 이전 한영 전환 키로 돌아가요.")
-        capsHelp.frame = NSRect(x: 24, y: 318, width: 500, height: 60)
+        capsHelp.frame = NSRect(x: 24, y: 438, width: 500, height: 60)
         root.addSubview(capsHelp)
         let capsSettings = NSButton(title: "로그인 항목 설정…", target: self,
                                     action: #selector(openLoginSettings))
         capsSettings.bezelStyle = .rounded
-        capsSettings.frame = NSRect(x: 24, y: 276, width: 190, height: 32)
+        capsSettings.frame = NSRect(x: 24, y: 396, width: 190, height: 32)
         root.addSubview(capsSettings)
         let title = NSTextField(labelWithString: "다른 키로 전환 (ABC ↔ 순아래)")
         title.font = .boldSystemFont(ofSize: 18)
-        title.frame = NSRect(x: 24, y: 238, width: 500, height: 26)
+        title.frame = NSRect(x: 24, y: 358, width: 500, height: 26)
         root.addSubview(title)
         let help = NSTextField(wrappingLabelWithString:
             "F1–F20 또는 Control·Option·Command와 다른 키의 조합을 지정하세요.\n이 키는 모든 앱에서 한영 전환에 쓰이며, 원래 단축키로 전달되지 않아요.")
-        help.frame = NSRect(x: 24, y: 182, width: 500, height: 46)
+        help.frame = NSRect(x: 24, y: 302, width: 500, height: 46)
         root.addSubview(help)
         value.font = .monospacedSystemFont(ofSize: 20, weight: .medium)
-        value.frame = NSRect(x: 24, y: 134, width: 300, height: 30)
+        value.frame = NSRect(x: 24, y: 254, width: 300, height: 30)
         root.addSubview(value)
-        record.frame = NSRect(x: 356, y: 133, width: 170, height: 32)
+        record.frame = NSRect(x: 356, y: 253, width: 170, height: 32)
         record.bezelStyle = .rounded
         record.target = self; record.action = #selector(beginRecording)
         root.addSubview(record)
-        message.frame = NSRect(x: 24, y: 62, width: 500, height: 58)
+        message.frame = NSRect(x: 24, y: 182, width: 500, height: 58)
         message.font = .systemFont(ofSize: 12)
         root.addSubview(message)
+        focusRefresh.frame = NSRect(x: 24, y: 126, width: 500, height: 26)
+        root.addSubview(focusRefresh)
+        let focusHelp = NSTextField(wrappingLabelWithString:
+            "앱을 바꾸지 않고, 한영 전환 직후 입력 초점을 갱신해요.\n순아래의 전환 키와 Esc 전환에 적용돼요. 효과는 확인 중이에요.")
+        focusHelp.frame = NSRect(x: 24, y: 68, width: 500, height: 50)
+        root.addSubview(focusHelp)
         for (label, x, action) in [("사용 안 함", 24.0, #selector(disable)),
                                     ("취소", 346.0, #selector(cancel)), ("적용", 438.0, #selector(apply))] {
             let button = NSButton(title: label, target: self, action: action)
@@ -76,6 +83,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         candidate = manager.savedShortcut
         manualCandidate = manager.capsLockEnabled ? manager.shortcutBeforeCapsLock : candidate
         caps.state = manager.capsLockEnabled ? .on : .off
+        focusRefresh.state = manager.focusRefreshEnabled ? .on : .off
         record.isEnabled = caps.state == .off
         value.stringValue = candidate?.displayName ?? "사용 안 함"
         message.stringValue = manager.errorMessage ?? (manager.loginNeedsApproval
@@ -148,7 +156,8 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
 
     @objc private func apply() {
         endRecording()
-        if let error = manager.apply(candidate, capsLockEnabled: caps.state == .on) { message.stringValue = error; return }
+        if let error = manager.apply(candidate, capsLockEnabled: caps.state == .on,
+                                     focusRefreshEnabled: focusRefresh.state == .on) { message.stringValue = error; return }
         if manager.loginNeedsApproval {
             message.stringValue = "현재 매핑은 사용할 수 있어요. 재부팅 뒤에도 쓰려면 ‘로그인 항목 설정’에서 순아래 실행을 허용해 주세요."
             return

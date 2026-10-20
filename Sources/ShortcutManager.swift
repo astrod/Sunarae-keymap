@@ -2,24 +2,29 @@ import AppKit
 import Carbon
 
 final class ShortcutManager {
-    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), capsLock: CapsLockConfiguration.live(), toggle: {
+    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), capsLock: CapsLockConfiguration.live(),
+    focusRefreshChanged: { InputSourceFocusRefresh.shared.cancel() }, toggle: {
         InputSource.toggle(beforeLeavingSunarae: InputController.commitActiveComposition)
     })
     private let settings: InputSettings
     private let registration: HotKeyRegistering
     private let capsLock: CapsLockConfiguring?
+    private let focusRefreshChanged: () -> Void
     private(set) var errorMessage: String?
     var registeredShortcut: KeyboardShortcut? { registration.shortcut }
     var savedShortcut: KeyboardShortcut? { settings.toggleShortcut }
     var capsLockEnabled: Bool { settings.capsLockToF18Enabled }
+    var focusRefreshEnabled: Bool { settings.refreshFocusOnInputSwitch }
     var shortcutBeforeCapsLock: KeyboardShortcut? { settings.shortcutBeforeCapsLock }
     var loginNeedsApproval: Bool { capsLockEnabled && capsLock?.loginNeedsApproval == true }
 
     init(settings: InputSettings, registration: HotKeyRegistering, capsLock: CapsLockConfiguring? = nil,
+         focusRefreshChanged: @escaping () -> Void = {},
          toggle: @escaping () -> Bool) {
         self.settings = settings
         self.registration = registration
         self.capsLock = capsLock
+        self.focusRefreshChanged = focusRefreshChanged
         registration.onPress = { [weak self] in
             if toggle() { self?.errorMessage = nil }
             else {
@@ -46,7 +51,8 @@ final class ShortcutManager {
         return error
     }
 
-    @discardableResult func apply(_ shortcut: KeyboardShortcut?, capsLockEnabled enabled: Bool = false) -> String? {
+    @discardableResult func apply(_ shortcut: KeyboardShortcut?, capsLockEnabled enabled: Bool = false,
+                                 focusRefreshEnabled: Bool? = nil) -> String? {
         let target: KeyboardShortcut? = enabled ? .capsLockF18 : shortcut
         let previous = registration.shortcut
         if let error = register(target) { errorMessage = error; return error }
@@ -67,6 +73,10 @@ final class ShortcutManager {
         settings.capsLockOwnsLoginItem = enabled && ownsLogin
         settings.toggleShortcut = target
         settings.capsLockToF18Enabled = enabled
+        if let focusRefreshEnabled, settings.refreshFocusOnInputSwitch != focusRefreshEnabled {
+            settings.refreshFocusOnInputSwitch = focusRefreshEnabled
+            focusRefreshChanged()
+        }
         errorMessage = nil
         return nil
     }

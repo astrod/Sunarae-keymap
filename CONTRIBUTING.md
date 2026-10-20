@@ -12,6 +12,7 @@
 | 키·단축키 처리 | `Sources/KeyMap.swift`, `Sources/InputSession.swift` | `Tests/SessionChecks.swift` |
 | Esc 전환 설정·입력 메뉴·ABC 선택 | `Sources/InputSettings.swift`, `Sources/InputSource.swift`, `Sources/InputController.swift` | `Tests/EscapeChecks.swift`, `Tests/MenuChecks.swift`, 실제 Vim 시험 |
 | 한영 전환 키·설정 창 | `Sources/KeyboardShortcut.swift`, `Sources/GlobalHotKey.swift`, `Sources/ShortcutManager.swift`, `Sources/ShortcutSettingsController.swift` | `Tests/ShortcutChecks.swift`, 실제 설정·ABC 왕복 시험 |
+| 한영 전환 보완 옵션 | `Sources/InputSourceFocusRefresh.swift`, `Sources/InputSettings.swift` | `Tests/FocusRefreshChecks.swift`, 설정 저장·취소, 빠른 전환·첫 글자·창 테두리 실제 확인 |
 | Caps Lock 매핑·로그인 실행 | `Sources/CapsLockMapping.swift`, `Sources/KeyboardConnectionObserver.swift` | `Tests/CapsLockChecks.swift`, 실제 설정 켜기·끄기·재실행·Caps Lock 시험 |
 | 앱에 조합 표시·확정 | `Sources/InputSession.swift`, `Sources/InputController.swift` | 세션·편집 검사와 실제 시험창 |
 | 검사에 쓰는 텍스트 클라이언트 | `Tests/TestSupport.swift` | `make test` |
