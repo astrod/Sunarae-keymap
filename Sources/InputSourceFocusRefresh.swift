@@ -112,8 +112,16 @@ final class FocusRefreshRunner {
 
     func observedActivation(pid: Int32) {
         if pid == ownPID {
-            // An old notification must not pull the user away from another app.
-            guard context().applicationPID == ownPID else { return }
+            // The snapshot can lag behind the notification. Recheck once on
+            // the next main-queue turn instead of dropping it until timeout.
+            // If another app still owns activation, leave the request alone.
+            guard context().applicationPID == ownPID else {
+                schedule(0) { [weak self] in
+                    guard let self, self.context().applicationPID == self.ownPID else { return }
+                    self.observedActivation(pid: self.ownPID)
+                }
+                return
+            }
             if request == nil || request?.phase == .queued {
                 guard let destination = lateReturn?.destinationPID else { return }
                 // A late entry also satisfies a newer queued Korean request.

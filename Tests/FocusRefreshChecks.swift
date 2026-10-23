@@ -386,6 +386,41 @@ func runFocusRefreshChecks() {
         f.activate(7); f.advance()
         check(f.restored == [99], "actual late activation still recovers after a stale notification")
     }
+    for cancelled in [false, true] {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        if cancelled { f.source("english"); f.runner.selected("english") }
+        // The notification and frontmost-app snapshot need not update together.
+        f.runner.observedActivation(pid: 7)
+        f.context = FocusRefreshContext(sourceID: f.context.sourceID, applicationPID: 7)
+        f.advance()
+        check(f.restored == [42], "activation before snapshot update returns without waiting for timeout")
+        f.activate(42); f.advance(2)
+        check(!f.visible && !f.runner.isPending && f.restored == [42],
+              "normal and cancelled entries finish once after a delayed snapshot")
+    }
+    for cancelled in [false, true] {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        if cancelled { f.source("english"); f.runner.selected("english") }
+        f.runner.observedActivation(pid: 7)
+        // A genuine user app change before the queued return must still win.
+        f.activate(99); f.advance(2)
+        check(f.restored.isEmpty && !f.visible && !f.runner.isPending,
+              "deferred activation handling does not pull focus from a newer app")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        f.runner.observedActivation(pid: 7)
+        f.advance()
+        check(f.restored.isEmpty && f.runner.isPending && f.scheduled.count == 1,
+              "a stale notification leaves the outstanding entry and only its timeout")
+        f.activate(7); f.advance()
+        check(f.restored == [42], "a real activation still returns after a stale notification")
+        f.activate(42); f.advance(2)
+        check(!f.runner.isPending && !f.visible, "stale then real notifications leave no pending work")
+    }
     for whileActive in [false, true] {
         let f = FocusFixture()
         f.runner.selected("korean"); f.advance()
