@@ -24,7 +24,13 @@ The new regression cases cover standalone English selection, cancellation before
 
 ## Installation
 
-The installed 0.7.3 app was backed up in `build/backups/before-english-switch.0UCc70/Sunarae.app`; its signature passed verification. The first install attempt stopped before replacing the app because Sunarae was selected again. Installation awaits the user's switch to ABC.
+The installed 0.7.3 app was backed up in `build/backups/before-english-switch.0UCc70/Sunarae.app`; its signature passed verification. The first install attempt stopped before replacing the app because Sunarae was selected again. After the user switched to ABC and requested installation, the update completed.
+
+- Confirmed installed version 0.7.4 (30), registered and enabled at `~/Library/Input Methods/Sunarae.app`.
+- Installed and built executables share SHA-256 `34c91747409a30552b5295197e69a1cb31cd0995b1244c73a97b6187c1bd9ef2`. Strict signature verification and the installed composition/network self-check passed.
+- A new process runs from the installed path (PID 9106). The UI launch request timed out, but the process check confirmed launch, so no second launch was attempted.
+- The focus-refresh, Caps Lock and Escape-to-ABC preferences remain enabled. ABC remains selected for the user's next physical switch.
+- Physical switching, flicker and immediate typing in the user's editors remain unverified for this version.
 
 ## Limits
 
