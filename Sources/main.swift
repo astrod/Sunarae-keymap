@@ -15,17 +15,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 // The uninstall script uses the installed bundle's settings and registration.
 // Exit before creating an IMK server or claiming any shortcut.
-if CommandLine.arguments.contains("--disable-caps-lock") {
+// Keep the old argument for uninstall tools shipped before 0.8.0.
+if CommandLine.arguments.contains("--disable-switch-key") || CommandLine.arguments.contains("--disable-caps-lock") {
     let settings = InputSettings.shared
-    if settings.capsLockToF18Enabled {
+    if let key = settings.mappedSwitchKey {
         do {
-            try CapsLockConfiguration.live().disable(removeLoginItem: settings.capsLockOwnsLoginItem)
-            settings.toggleShortcut = settings.shortcutBeforeCapsLock
-            settings.shortcutBeforeCapsLock = nil
-            settings.capsLockToF18Enabled = false
-            settings.capsLockOwnsLoginItem = false
+            _ = try SwitchKeyConfiguration.live().change(from: key, to: nil,
+                ownsLoginItem: settings.switchKeyOwnsLoginItem)
+            settings.toggleShortcut = nil
+            settings.mappedSwitchKey = nil
+            settings.switchKeyOwnsLoginItem = false
         } catch {
-            fputs("Caps Lock 설정을 해제하지 못했어요: \(error.localizedDescription)\n", stderr)
+            fputs("전환 키 설정을 해제하지 못했어요: \(error.localizedDescription)\n", stderr)
             exit(1)
         }
     }
@@ -73,5 +74,5 @@ guard let connection = Bundle.main.object(forInfoDictionaryKey: "InputMethodConn
     exit(1)
 }
 ShortcutManager.shared.restore()
-let keyboardConnections = KeyboardConnectionObserver { ShortcutManager.shared.restoreCapsLockMapping() }
+let keyboardConnections = KeyboardConnectionObserver { ShortcutManager.shared.restoreMapping() }
 withExtendedLifetime((server, keyboardConnections)) { app.run() }

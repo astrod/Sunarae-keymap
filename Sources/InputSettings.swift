@@ -26,17 +26,26 @@ final class InputSettings {
         set { saveShortcut(newValue, forKey: "toggleShortcut") }
     }
 
-    var capsLockToF18Enabled: Bool {
-        get { defaults.bool(forKey: "capsLockToF18Enabled") }
-        set { defaults.set(newValue, forKey: "capsLockToF18Enabled") }
+    var mappedSwitchKey: SwitchKey? {
+        get {
+            if let value = defaults.string(forKey: "mappedSwitchKey") { return SwitchKey(rawValue: value) }
+            return defaults.bool(forKey: "capsLockToF18Enabled") ? .capsLock : nil
+        }
+        set {
+            defaults.set(newValue?.rawValue ?? "none", forKey: "mappedSwitchKey")
+            defaults.removeObject(forKey: "capsLockToF18Enabled")
+            defaults.removeObject(forKey: "shortcutBeforeCapsLock")
+        }
     }
-    var capsLockOwnsLoginItem: Bool {
-        get { defaults.bool(forKey: "capsLockOwnsLoginItem") }
-        set { defaults.set(newValue, forKey: "capsLockOwnsLoginItem") }
-    }
-    var shortcutBeforeCapsLock: KeyboardShortcut? {
-        get { shortcut(forKey: "shortcutBeforeCapsLock") }
-        set { saveShortcut(newValue, forKey: "shortcutBeforeCapsLock") }
+    var switchKeyOwnsLoginItem: Bool {
+        get {
+            defaults.object(forKey: "switchKeyOwnsLoginItem") as? Bool
+                ?? defaults.bool(forKey: "capsLockOwnsLoginItem")
+        }
+        set {
+            defaults.set(newValue, forKey: "switchKeyOwnsLoginItem")
+            defaults.removeObject(forKey: "capsLockOwnsLoginItem")
+        }
     }
 
     private func shortcut(forKey key: String) -> KeyboardShortcut? {

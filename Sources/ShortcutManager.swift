@@ -2,28 +2,29 @@ import AppKit
 import Carbon
 
 final class ShortcutManager {
-    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), capsLock: CapsLockConfiguration.live(),
+    static let shared = ShortcutManager(settings: .shared, registration: GlobalHotKey(), mapping: SwitchKeyConfiguration.live(),
     focusRefreshChanged: { InputSourceFocusRefresh.shared.cancel() }, toggle: {
         InputSource.toggle(beforeLeavingSunarae: InputController.commitActiveComposition)
     })
     private let settings: InputSettings
     private let registration: HotKeyRegistering
-    private let capsLock: CapsLockConfiguring?
+    private let mapping: SwitchKeyConfiguring?
+    private var suspendedForRecording = false
+    var recordingIsSuspended: Bool { suspendedForRecording }
     private let focusRefreshChanged: () -> Void
     private(set) var errorMessage: String?
     var registeredShortcut: KeyboardShortcut? { registration.shortcut }
     var savedShortcut: KeyboardShortcut? { settings.toggleShortcut }
-    var capsLockEnabled: Bool { settings.capsLockToF18Enabled }
+    var mappedKey: SwitchKey? { settings.mappedSwitchKey }
     var focusRefreshEnabled: Bool { settings.refreshFocusOnInputSwitch }
-    var shortcutBeforeCapsLock: KeyboardShortcut? { settings.shortcutBeforeCapsLock }
-    var loginNeedsApproval: Bool { capsLockEnabled && capsLock?.loginNeedsApproval == true }
+    var loginNeedsApproval: Bool { mappedKey != nil && mapping?.loginNeedsApproval == true }
 
-    init(settings: InputSettings, registration: HotKeyRegistering, capsLock: CapsLockConfiguring? = nil,
+    init(settings: InputSettings, registration: HotKeyRegistering, mapping: SwitchKeyConfiguring? = nil,
          focusRefreshChanged: @escaping () -> Void = {},
          toggle: @escaping () -> Bool) {
         self.settings = settings
         self.registration = registration
-        self.capsLock = capsLock
+        self.mapping = mapping
         self.focusRefreshChanged = focusRefreshChanged
         registration.onPress = { [weak self] in
             if toggle() { self?.errorMessage = nil }
@@ -35,44 +36,66 @@ final class ShortcutManager {
     }
 
     func restore() {
-        errorMessage = register(capsLockEnabled ? .capsLockF18 : settings.toggleShortcut)
-        if errorMessage == nil { restoreCapsLockMapping() }
+        let wasSuspended = suspendedForRecording
+        errorMessage = register(mappedKey != nil ? .mappedF18 : settings.toggleShortcut)
+        if errorMessage == nil {
+            suspendedForRecording = false
+            restoreMapping()
+            if errorMessage != nil { suspendedForRecording = wasSuspended }
+        }
     }
 
-    func restoreCapsLockMapping() {
-        guard capsLockEnabled, registeredShortcut == .capsLockF18 else { return }
-        do { try capsLock?.restore(); errorMessage = nil }
-        catch { errorMessage = error.localizedDescription }
+    func restoreMapping() {
+        guard !suspendedForRecording, let key = mappedKey, registeredShortcut == .mappedF18 else { return }
+        do {
+            guard let mapping else { throw SwitchKeyError("전환 키 매핑을 사용할 수 없어요.") }
+            try mapping.restore(key); errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func suspend() -> String? {
-        let error = register(nil)
-        errorMessage = error
-        return error
+        guard !suspendedForRecording else { return nil }
+        let previous = registration.shortcut
+        if let error = register(nil) { errorMessage = error; return error }
+        suspendedForRecording = true
+        do {
+            if let key = mappedKey {
+                guard let mapping else { throw SwitchKeyError("전환 키 매핑을 사용할 수 없어요.") }
+                try mapping.suspend(key)
+            }
+        } catch {
+            suspendedForRecording = false
+            let rollback = register(previous)
+            errorMessage = error.localizedDescription + (rollback.map { "\n이전 전환 키 복원: \($0)" } ?? "")
+            return errorMessage
+        }
+        errorMessage = nil
+        return nil
     }
 
-    @discardableResult func apply(_ shortcut: KeyboardShortcut?, capsLockEnabled enabled: Bool = false,
+    @discardableResult func apply(_ shortcut: KeyboardShortcut?, mappedKey key: SwitchKey? = nil,
                                  focusRefreshEnabled: Bool? = nil) -> String? {
-        let target: KeyboardShortcut? = enabled ? .capsLockF18 : shortcut
+        if suspendedForRecording {
+            restore()
+            if let errorMessage { return errorMessage }
+        }
+        let target: KeyboardShortcut? = key != nil ? .mappedF18 : shortcut
         let previous = registration.shortcut
         if let error = register(target) { errorMessage = error; return error }
-        var ownsLogin = settings.capsLockOwnsLoginItem
+        var ownsLogin = settings.switchKeyOwnsLoginItem
         do {
-            if enabled || capsLockEnabled {
-                guard let capsLock else { throw CapsLockError("Caps Lock 설정을 사용할 수 없어요.") }
-                if enabled { ownsLogin = try capsLock.enable() || ownsLogin }
-                else { try capsLock.disable(removeLoginItem: ownsLogin) }
+            if key != nil || mappedKey != nil {
+                guard let mapping else { throw SwitchKeyError("전환 키 설정을 사용할 수 없어요.") }
+                ownsLogin = try mapping.change(from: mappedKey, to: key, ownsLoginItem: ownsLogin)
             }
         } catch {
             let rollbackError = register(previous)
             errorMessage = error.localizedDescription + (rollbackError.map { "\n이전 전환 키 복원: \($0)" } ?? "")
             return errorMessage
         }
-        if enabled && !capsLockEnabled { settings.shortcutBeforeCapsLock = settings.toggleShortcut }
-        if !enabled { settings.shortcutBeforeCapsLock = nil }
-        settings.capsLockOwnsLoginItem = enabled && ownsLogin
+        settings.switchKeyOwnsLoginItem = key != nil && ownsLogin
         settings.toggleShortcut = target
-        settings.capsLockToF18Enabled = enabled
+        settings.mappedSwitchKey = key
         if let focusRefreshEnabled, settings.refreshFocusOnInputSwitch != focusRefreshEnabled {
             settings.refreshFocusOnInputSwitch = focusRefreshEnabled
             focusRefreshChanged()

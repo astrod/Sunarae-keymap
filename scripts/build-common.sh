@@ -7,9 +7,9 @@ minimum_macos="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' Reso
 target_arch="$(uname -m)"
 swift_target="$target_arch-apple-macosx$minimum_macos"
 library="$build_dir/libhangul.a"
-core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/KeyboardShortcut.swift Sources/InputSettings.swift Sources/TextClient.swift
+core_sources=(Sources/Composer.swift Sources/KeyMap.swift Sources/KeyboardShortcut.swift Sources/ShortcutCapture.swift Sources/InputSettings.swift Sources/TextClient.swift
               Sources/InputSession.swift)
-app_sources=(Sources/InputSource.swift Sources/InputSourceFocusRefresh.swift Sources/GlobalHotKey.swift Sources/CapsLockMapping.swift Sources/KeyboardConnectionObserver.swift Sources/ShortcutManager.swift
+app_sources=(Sources/InputSource.swift Sources/InputSourceFocusRefresh.swift Sources/GlobalHotKey.swift Sources/SwitchKeyMapping.swift Sources/KeyboardConnectionObserver.swift Sources/ShortcutManager.swift
              Sources/ShortcutSettingsController.swift Sources/InputController.swift)
 check_sources=(Tests/TestSupport.swift Tests/SessionChecks.swift Tests/EscapeChecks.swift Tests/SunaraeChecks.swift
                Tests/EditingChecks.swift Tests/CompatibilityChecks.swift Tests/ReentrancyChecks.swift Tests/main.swift)

@@ -13,7 +13,7 @@
 | Esc 전환 설정·입력 메뉴·ABC 선택 | `Sources/InputSettings.swift`, `Sources/InputSource.swift`, `Sources/InputController.swift` | `Tests/EscapeChecks.swift`, `Tests/MenuChecks.swift`, 실제 Vim 시험 |
 | 한영 전환 키·설정 창 | `Sources/KeyboardShortcut.swift`, `Sources/GlobalHotKey.swift`, `Sources/ShortcutManager.swift`, `Sources/ShortcutSettingsController.swift` | `Tests/ShortcutChecks.swift`, 실제 설정·ABC 왕복 시험 |
 | 한영 전환 보완 옵션 | `Sources/InputSourceFocusRefresh.swift`, `Sources/InputSettings.swift` | `Tests/FocusRefreshChecks.swift`, 설정 저장·취소, 빠른 전환·첫 글자·창 테두리 실제 확인 |
-| Caps Lock 매핑·로그인 실행 | `Sources/CapsLockMapping.swift`, `Sources/KeyboardConnectionObserver.swift` | `Tests/CapsLockChecks.swift`, 실제 설정 켜기·끄기·재실행·Caps Lock 시험 |
+| 전용 키 매핑·로그인 실행 | `Sources/SwitchKeyMapping.swift`, `Sources/KeyboardConnectionObserver.swift` | `Tests/SwitchKeyChecks.swift`, 실제 네 전용 키 기록·적용·해제·취소·재실행 시험 |
 | 앱에 조합 표시·확정 | `Sources/InputSession.swift`, `Sources/InputController.swift` | 세션·편집 검사와 실제 시험창 |
 | 검사에 쓰는 텍스트 클라이언트 | `Tests/TestSupport.swift` | `make test` |
 | 빌드 대상·소스 목록·공통 컴파일 설정 | `scripts/build-common.sh` | `make check`, `make probe` |
@@ -43,10 +43,11 @@ libhangul 원본 코드는 별도 경계로 유지하며, 다른 파일로 옮�
 - `Tests/EscapeChecks.swift`: 전환 성공·실패 뒤 같은 세션의 한글 입력, 설정 유지·변경, 수정키 조합, 확정 순서와 중첩 호출. 별도 설정 저장소와 전환 대역을 사용합니다.
 - `Tests/MenuChecks.swift`: 별도 실행 파일에서 IMK 메뉴 명령과 체크 표시를 확인합니다. 실제 입력 소스를 선택하지 않습니다.
 - `Tests/ShortcutChecks.swift`: 별도 설정 저장소와 등록 대역으로 키 검증·저장·변경·해제, 실패 시 기존 값 유지, 설정 창 취소, 키 반복과 전환 방향을 확인합니다. 전역 단축키를 실제로 등록하지 않습니다.
-- `Tests/CapsLockChecks.swift`: 기존 키 매핑·전환 키 보존, 권한이 필요한 매핑 거부, 로그인 항목 등록·해제, 중간 실패와 복원. 실제 키보드나 로그인 설정을 바꾸지 않습니다.
+- `Tests/ShortcutCaptureChecks.swift`: 오른쪽 수정키 단독 입력과 조합 구분, 이미 누른 키·양쪽 수정키·Esc·미지원 키를 확인합니다.
+- `Tests/SwitchKeyChecks.swift`: 기존 키 매핑·전환 키 보존, 권한이 필요한 매핑 거부, 로그인 항목 등록·해제, 중간 실패와 복원. 실제 키보드나 로그인 설정을 바꾸지 않습니다.
 - `Tests/FocusRefreshChecks.swift`: 한글 전환의 앱 활성화·복귀, 영어 전환 제외, 연속 전환, 외부 앱·입력 소스 변경, 요청 실패·알림 누락, 중첩 호출·취소·종료, 취소·시간초과 뒤 늦은 활성화, 활성화 알림과 앱 상태 조회의 순서 차이, 설정 창 직접 열기, 이전 타이머 무시와 포인터 처리. 실제 초점은 바꾸지 않습니다.
 - `Tests/EditingChecks.swift`: 연속 삭제·붙여넣기·실행 취소.
-- `Tests/PackagingChecks.py`: 임시 폴더에서 설치 성공·목록 갱신 대기·실패 복원, 현재 입력기 조회 실패·사용 중 입력기·이름 충돌 보호, 빌드 실패·배포 폴더 교체 실패·성공 검사. 진단 도구가 조회 명령만 부르고 파일을 바꾸지 않는지도 확인한다. 삭제 도구는 Caps Lock 정리를 마친 뒤 휴지통으로 옮기는지, 정리 실패 시 멈추는지 검사한다.
+- `Tests/PackagingChecks.py`: 임시 폴더에서 설치 성공·목록 갱신 대기·실패 복원, 현재 입력기 조회 실패·사용 중 입력기·이름 충돌 보호, 빌드 실패·배포 폴더 교체 실패·성공 검사. 진단 도구가 조회 명령만 부르고 파일을 바꾸지 않는지도 확인한다. 삭제 도구는 전용 키 정리를 마친 뒤 휴지통으로 옮기는지, 정리 실패 시 멈추는지 검사한다.
 - `.pkg` 검사에서는 현재 사용자용 도메인, 포함된 앱의 ID와 서명, 설치 스크립트를 확인한다. `Tests/InputSourceStub.py`가 입력기 전환·활성화 상태를 대신해 실제 입력 소스를 바꾸지 않는다.
 - `Tests/InputProbe.swift`: 별도 시험창에서의 네이티브/WebKit 검사.
 

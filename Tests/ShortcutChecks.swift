@@ -14,7 +14,8 @@ private final class FakeHotKey: HotKeyRegistering {
 @main struct ShortcutChecks {
     static func main() {
         _ = NSApplication.shared
-        runCapsLockChecks()
+        runSwitchKeyChecks()
+        runShortcutCaptureChecks()
         runFocusRefreshChecks()
         let suite = "SunaraeTests.Shortcuts.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

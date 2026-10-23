@@ -2,7 +2,7 @@ import AppKit
 import Carbon
 
 struct KeyboardShortcut: Codable, Equatable {
-    static let capsLockF18 = KeyboardShortcut(keyCode: 79, modifiers: 0)
+    static let mappedF18 = KeyboardShortcut(keyCode: 79, modifiers: 0)
     let keyCode: UInt32
     let modifiers: UInt32
 
@@ -63,5 +63,43 @@ struct KeyboardShortcut: Codable, Equatable {
             if modifiers & UInt32(mask) != 0 { result += symbol }
         }
         return result + (Self.functionKeys[keyCode] ?? Self.names[keyCode] ?? "지원하지 않는 키")
+    }
+}
+
+/// Only these non-text keys can become dedicated switch keys.
+enum SwitchKey: String, CaseIterable {
+    case capsLock, rightOption, rightCommand, rightControl
+
+    var keyCode: UInt16 {
+        switch self {
+        case .capsLock: return 57
+        case .rightOption: return 61
+        case .rightCommand: return 54
+        case .rightControl: return 62
+        }
+    }
+    var usage: UInt64 {
+        switch self {
+        case .capsLock: return 0x700000039
+        case .rightOption: return 0x7000000e6
+        case .rightCommand: return 0x7000000e7
+        case .rightControl: return 0x7000000e4
+        }
+    }
+    var displayName: String {
+        switch self {
+        case .capsLock: return "Caps Lock"
+        case .rightOption: return "오른쪽 Option"
+        case .rightCommand: return "오른쪽 Command"
+        case .rightControl: return "오른쪽 Control"
+        }
+    }
+    var modifier: NSEvent.ModifierFlags {
+        switch self {
+        case .capsLock: return .capsLock
+        case .rightOption: return .option
+        case .rightCommand: return .command
+        case .rightControl: return .control
+        }
     }
 }
