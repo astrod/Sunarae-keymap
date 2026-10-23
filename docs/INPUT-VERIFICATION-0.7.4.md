@@ -34,4 +34,6 @@ The installed 0.7.3 app was backed up in `build/backups/before-english-switch.0U
 
 ## Limits
 
-No physical switching or appearance test of 0.7.4 has been completed. Korean switching can still produce the previously reported occasional flicker. Rapid English selection while a Korean trip is already active still needs that existing trip to finish returning; it cannot undo an activation that has already happened. Removing the English workaround requires physical checks for English switch reliability and immediate typing in the user's editors.
+After installation, the user reported that the flicker had stopped, then requested the nonactivating panel approach for Korean as well. They did not separately report a failed-switch recovery or a first-character test.
+
+No separate first-character or failed-switch recovery test was reported for 0.7.4. The user's appearance report does not guarantee flicker-free behavior in every app. Rapid English selection while a Korean trip is already active still needs that existing trip to finish returning; it cannot undo an activation that has already happened. Removing the English workaround requires physical checks for English switch reliability and immediate typing in the user's editors.
