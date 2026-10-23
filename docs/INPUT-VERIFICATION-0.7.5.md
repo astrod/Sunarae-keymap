@@ -32,3 +32,7 @@ After the user switched to ABC and requested installation, the installer complet
 - The UI launch request timed out, but a process check confirmed a new process from the installed path (PID 11519). No second launch was attempted.
 - Focus refresh, Caps Lock mapping and Escape-to-ABC remain enabled. ABC remains selected for the user's next physical switch.
 - Physical Korean switching, first-character input, missed-switch recovery and flicker remain unverified for this version.
+
+## Subsequent user report
+
+After the release, the user reported that repeated switching could still leave Korean unavailable. They then confirmed that switching to another app and back restored Korean input. The panel-only approach did not prevent all missed switches in their environment. The user requested restoration of the 0.7.4 Korean app round trip while keeping English selection direct.

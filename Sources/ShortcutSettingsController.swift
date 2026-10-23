@@ -63,7 +63,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         focusRefresh.frame = NSRect(x: 24, y: 126, width: 500, height: 26)
         root.addSubview(focusRefresh)
         let focusHelp = NSTextField(wrappingLabelWithString:
-            "한글로 전환할 때 작은 패널로 입력 연결을 갱신해요.\n순아래 앱을 활성화하지 않으며, 영어 전환에는 적용하지 않아요.")
+            "한글 전환 때 순아래 앱을 잠깐 활성화한 뒤 원래 앱으로 돌아와요.\n영어 전환에는 이 처리를 시작하지 않아요.")
         focusHelp.frame = NSRect(x: 24, y: 68, width: 500, height: 50)
         root.addSubview(focusHelp)
         for (label, x, action) in [("사용 안 함", 24.0, #selector(disable)),
