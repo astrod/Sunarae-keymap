@@ -13,7 +13,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
     private let message = NSTextField(wrappingLabelWithString: "")
     private let record = NSButton(title: "키 입력하기", target: nil, action: nil)
     private let caps = NSButton(checkboxWithTitle: "Caps Lock으로 한영 전환", target: nil, action: nil)
-    private let focusRefresh = NSButton(checkboxWithTitle: "한영 전환 보완 (실험)", target: nil, action: nil)
+    private let focusRefresh = NSButton(checkboxWithTitle: "한영 전환 보완", target: nil, action: nil)
     private var candidate: KeyboardShortcut?
     private var manualCandidate: KeyboardShortcut?
     private var recording = false
@@ -63,7 +63,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
         focusRefresh.frame = NSRect(x: 24, y: 126, width: 500, height: 26)
         root.addSubview(focusRefresh)
         let focusHelp = NSTextField(wrappingLabelWithString:
-            "앱을 바꾸지 않고, 한영 전환 직후 입력 초점을 갱신해요.\n순아래의 전환 키와 Esc 전환에 적용돼요. 효과는 확인 중이에요.")
+            "표시만 바뀌고 입력 언어가 그대로인 현상을 줄이도록, 원래 앱의 입력 연결을 갱신해요.\n순아래의 전환 키와 Esc 전환에 적용돼요.")
         focusHelp.frame = NSRect(x: 24, y: 68, width: 500, height: 50)
         root.addSubview(focusHelp)
         for (label, x, action) in [("사용 안 함", 24.0, #selector(disable)),

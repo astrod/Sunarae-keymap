@@ -97,20 +97,20 @@ Esc와 Ctrl+[는 위의 ABC 전환 기능에 남겨 둡니다. 키 이름은 두
 다른 도구에서 같은 키를 쓰고 있다면, 순아래에 지정하기 전에 기존 설정을 해제해야 합니다.
 Caps Lock 기능을 끈 상태에서는 로그인 후 **순아래를 한 번 선택해 앱을 실행**해야 이 단축키를 받을 수 있습니다.
 
-### 한영 전환 보완 (실험)
+### 한영 전환 보완
 
-**기본으로 켜져 있습니다.** 순아래에 지정한 전환 키나 위의 Caps Lock 기능으로 한영을 전환할 때,
-입력 소스를 선택한 직후 보이지 않는 작은 패널로 입력 초점을 잠깐 갱신합니다.
-원래 앱을 비활성화하거나 다른 앱으로 전환하는 방식은 사용하지 않습니다.
+**기본으로 켜져 있습니다.** 한영 표시만 바뀌고 실제 입력 언어가 그대로 남는 현상을 줄이기 위한 기능입니다.
+순아래에 지정한 전환 키나 위의 Caps Lock 기능으로 입력 소스를 선택한 뒤,
+보이지 않는 작은 패널로 순아래 앱을 잠깐 활성화하고 원래 앱으로 바로 돌아와 입력 연결을 갱신합니다.
+고정 대기 시간을 두지 않으며, 다른 앱을 직접 선택하면 이전 앱으로 돌아가도록 강제하지 않습니다.
 한글·영문 양방향과 순아래의 Esc / Ctrl+[ 영문 전환에 적용합니다.
 macOS 자체 전환 키·입력 메뉴로 전환할 때는 순아래의 전환 함수를 거치지 않아 적용하지 않습니다.
 
-창 테두리의 깜빡임을 피하려고 앱을 활성화하지 않는 NSPanel 방식을 사용합니다.
-전환 누락을 실제로 줄이는지는 확인 중입니다. 별도 시험에서는 이미 생긴 누락이 이 패널만으로 회복하지 않았고, 실제 앱 왕복으로 회복했습니다.
-실제 앱 왕복 방식은 이 옵션에 넣지 않았습니다.
-**한영 전환 키 설정… → 한영 전환 보완 (실험)**에서 체크를 해제하고 **적용**을 누르면 끌 수 있습니다.
-직접 꺼 둔 설정은 다음 실행에서도 유지합니다.
-이 설정도 추가 권한, 네트워크 통신, 입력 내용 기록을 요구하지 않습니다.
+별도 시험에서 실제 전환 누락이 이 방식으로 회복했고, 사용자는 눈에 띄는 창 테두리 깜빡임을 보지 못했습니다.
+모든 앱에서 같은 결과를 보장하지는 않습니다.
+**한영 전환 키 설정… → 한영 전환 보완**에서 체크를 해제하고 **적용**을 누르면 끌 수 있습니다.
+직접 꺼 둔 설정은 업데이트와 다음 실행에서도 유지합니다.
+추가 권한, 네트워크 통신, 입력 내용 기록은 없습니다.
 
 ## 설치·업데이트·삭제
 
@@ -247,7 +247,7 @@ make web-probe   # 시험창 + CodeMirror 빌드
 - `Sources/InputSession.swift`: 키 처리, 확정, 중첩 호출 방지.
 - `Sources/InputSettings.swift`, `Sources/InputSource.swift`: Esc 전환 설정과 macOS ABC 선택 요청.
 - `Sources/KeyboardShortcut.swift`, `Sources/GlobalHotKey.swift`, `Sources/ShortcutManager.swift`: 한영 전환 키 검증·등록·저장과 실제 입력 소스 전환.
-- `Sources/InputSourceFocusRefresh.swift`: 선택 가능한 비활성 패널 보완과 종료·취소 처리.
+- `Sources/InputSourceFocusRefresh.swift`: 패널을 통한 앱 활성화·복귀와 종료·취소 처리.
 - `Sources/CapsLockMapping.swift`, `Sources/KeyboardConnectionObserver.swift`: Caps Lock 매핑·복원, 로그인 시 실행, 새 키보드 연결 처리.
 - `Sources/ShortcutSettingsController.swift`: 키 지정·변경·해제 창.
 - `Sources/TextClient.swift`, `Sources/InputController.swift`: 앱의 텍스트 API와 InputMethodKit 연결.

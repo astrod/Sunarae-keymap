@@ -6,20 +6,22 @@ struct FocusRefreshContext: Equatable {
     let applicationPID: Int32?
 }
 
-/// Keeps panel ordering and cleanup in one main-thread operation when AppKit
-/// sends didBecomeKey synchronously. No nested run loop or delayed key replay.
+/// Owns the app round trip. All system actions are injected for tests.
 final class FocusRefreshRunner {
+    private enum Phase { case queued, entering, returning }
     private struct Request {
         let id: Int
-        let context: FocusRefreshContext
-        var opening = true
-        var becameKey = false
+        let originalPID: Int32
+        var sourceID: String
+        var phase = Phase.queued
+        var activated = false
     }
     private let enabled: () -> Bool
     private let context: () -> FocusRefreshContext
     private let ownPID: Int32
     private let supportedSources: Set<String>
-    private let show: () -> Bool
+    private let enter: () -> Bool
+    private let restore: (Int32) -> Bool
     private let hide: () -> Void
     private let schedule: (Double, @escaping () -> Void) -> Void
     private var nextID = 0
@@ -27,62 +29,109 @@ final class FocusRefreshRunner {
     var isPending: Bool { request != nil }
 
     init(enabled: @escaping () -> Bool, context: @escaping () -> FocusRefreshContext,
-         ownPID: Int32, supportedSources: Set<String>, show: @escaping () -> Bool,
-         hide: @escaping () -> Void, schedule: @escaping (Double, @escaping () -> Void) -> Void) {
+         ownPID: Int32, supportedSources: Set<String>, enter: @escaping () -> Bool,
+         restore: @escaping (Int32) -> Bool, hide: @escaping () -> Void,
+         schedule: @escaping (Double, @escaping () -> Void) -> Void) {
         self.enabled = enabled
         self.context = context
         self.ownPID = ownPID
         self.supportedSources = supportedSources
-        self.show = show
+        self.enter = enter
+        self.restore = restore
         self.hide = hide
         self.schedule = schedule
     }
 
     func selected(_ identifier: String) {
-        cancel()
-        guard enabled(), supportedSources.contains(identifier) else { return }
-        let initial = context()
-        guard initial.sourceID == identifier, let pid = initial.applicationPID, pid != ownPID else { return }
-        nextID += 1
-        let id = nextID
-        request = Request(id: id, context: initial)
-        let shown = show()
-        guard var pending = request, pending.id == id else {
-            // A synchronous context change may cancel while AppKit is ordering.
-            if request == nil { hide() }
+        let current = context()
+        guard enabled(), supportedSources.contains(identifier), current.sourceID == identifier else {
+            cancel()
             return
         }
-        pending.opening = false
+        if var pending = request, current.applicationPID == ownPID, pending.phase != .queued {
+            // A second shortcut while we are away still belongs to the original app.
+            pending.sourceID = identifier
+            request = pending
+            return
+        }
+        cancel()
+        guard let pid = current.applicationPID, pid != ownPID else { return }
+        nextID += 1
+        let id = nextID
+        request = Request(id: id, originalPID: pid, sourceID: identifier)
+        // Return the current hotkey/Escape event before changing app activation.
+        schedule(0) { [weak self] in self?.begin(id) }
+    }
+
+    private func begin(_ id: Int) {
+        guard var pending = request, pending.id == id, pending.phase == .queued else { return }
+        let current = context()
+        guard enabled(), current.sourceID == pending.sourceID,
+              current.applicationPID == pending.originalPID else { finish(id); return }
+        pending.phase = .entering
         request = pending
-        guard shown, enabled(), context() == initial else { cancel(); return }
-        if pending.becameKey {
-            cancel()
+        schedule(0.7) { [weak self] in
+            guard let self, let current = self.request, current.id == id, current.phase == .entering else { return }
+            if self.context().applicationPID == self.ownPID { self.returnToOriginal(id) }
+            else { self.finish(id) }
+        }
+        let entered = enter()
+        guard request?.id == id else {
+            // AppKit may finish ordering the panel after a reentrant cancellation.
+            hide()
+            return
+        }
+        if !entered { cancel() }
+    }
+
+    func observedActivation(pid: Int32) {
+        guard var pending = request else { return }
+        if pid == ownPID {
+            guard pending.phase == .entering, !pending.activated else { return }
+            pending.activated = true
+            request = pending
+            // Same as the successful Y trial: no fixed dwell after activation.
+            schedule(0) { [weak self] in self?.returnToOriginal(pending.id) }
+        } else if pid == pending.originalPID {
+            if pending.phase == .returning || pending.activated { finish(pending.id) }
         } else {
-            schedule(0.2) { [weak self] in
-                guard let self, self.request?.id == id else { return }
-                self.cancel()
-            }
+            // A user-selected third app wins. Never pull it back to the old app.
+            finish(pending.id)
         }
     }
 
-    func panelBecameKey() {
-        guard var pending = request else { return }
-        pending.becameKey = true
-        request = pending
-        // makeKeyAndOrderFront can order the window *after* its callback.
-        // The caller closes it as soon as show() returns in that case.
-        if !pending.opening { cancel() }
+    func sourceChanged() {
+        guard let pending = request else { return }
+        if !enabled() || context().sourceID != pending.sourceID { cancel() }
     }
 
-    func contextChanged() {
-        guard let pending = request else { return }
-        if !enabled() || context() != pending.context { cancel() }
+    private func returnToOriginal(_ id: Int) {
+        guard var pending = request, pending.id == id, pending.phase == .entering else { return }
+        guard context().applicationPID == ownPID else { finish(id); return }
+        pending.phase = .returning
+        request = pending
+        let accepted = restore(pending.originalPID)
+        guard request?.id == id else { return }
+        guard accepted else { finish(id); return }
+        schedule(0.7) { [weak self] in
+            guard let self, self.request?.id == id, self.request?.phase == .returning else { return }
+            self.finish(id)
+        }
+    }
+
+    private func finish(_ id: Int) {
+        guard let pending = request, pending.id == id else { return }
+        request = nil
+        if pending.phase != .queued { hide() }
     }
 
     func cancel() {
-        guard request != nil else { return }
+        guard let pending = request else { return }
         request = nil
-        hide()
+        if pending.phase == .entering, context().applicationPID == ownPID {
+            _ = restore(pending.originalPID)
+        }
+        if pending.phase != .queued { hide() }
     }
 }
 
@@ -91,9 +140,9 @@ private final class InputFocusPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-/// This path deliberately never activates Sunarae or another application.
-/// The separate app-activation experiment is not part of the input method.
-final class InputSourceFocusRefresh: NSObject, NSWindowDelegate {
+/// Activates this app through a tiny panel, then returns to the original app.
+/// No event tap, key replay, input-source reselection or diagnostic log is used.
+final class InputSourceFocusRefresh {
     static let shared = InputSourceFocusRefresh()
     private var panel: InputFocusPanel?
     private var applicationObserver: NSObjectProtocol?
@@ -106,12 +155,39 @@ final class InputSourceFocusRefresh: NSObject, NSWindowDelegate {
         },
         ownPID: ProcessInfo.processInfo.processIdentifier,
         supportedSources: [InputSource.sunaraeID, InputSource.abcID],
-        show: { [weak self] in self?.showPanel() ?? false },
-        hide: { [weak self] in self?.panel?.orderOut(nil) },
+        enter: { [weak self] in self?.activatePanel() ?? false },
+        restore: { pid in
+            guard let original = NSRunningApplication(processIdentifier: pid), !original.isTerminated else { return false }
+            if #available(macOS 14, *) {
+                NSApp.yieldActivation(to: original)
+                return original.activate(from: .current, options: [])
+            }
+            return original.activate(options: [.activateIgnoringOtherApps])
+        },
+        hide: { [weak self] in
+            self?.panel?.orderOut(nil)
+            if NSApp.isActive { NSApp.hide(nil) }
+        },
         schedule: { delay, action in
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { action() }
         }
     )
+
+    private init() {
+        applicationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
+            self?.runner.observedActivation(pid: app.processIdentifier)
+        }
+        sourceObserver = DistributedNotificationCenter.default().addObserver(
+            forName: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String),
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            // TIS can notify inside select(); let selected() record the latest target first.
+            DispatchQueue.main.async { self?.runner.sourceChanged() }
+        }
+    }
 
     func selected(_ identifier: String) {
         precondition(Thread.isMainThread)
@@ -123,17 +199,16 @@ final class InputSourceFocusRefresh: NSObject, NSWindowDelegate {
         runner.cancel()
     }
 
-    private func showPanel() -> Bool {
+    private func activatePanel() -> Bool {
+        if NSApp.activationPolicy() == .prohibited,
+           !NSApp.setActivationPolicy(.accessory) { return false }
         if panel == nil {
-            // Background-only input methods must allow windows; accessory policy
-            // does not add a Dock icon or activate the application.
-            if NSApp.activationPolicy() == .prohibited,
-               !NSApp.setActivationPolicy(.accessory) { return false }
             let window = InputFocusPanel(
                 contentRect: NSRect(x: -100, y: -100, width: 1, height: 1),
                 styleMask: [.borderless, .utilityWindow, .nonactivatingPanel],
                 backing: .buffered, defer: false)
             window.alphaValue = 0
+            window.backgroundColor = .clear
             window.isOpaque = false
             window.hasShadow = false
             window.animationBehavior = .none
@@ -142,22 +217,12 @@ final class InputSourceFocusRefresh: NSObject, NSWindowDelegate {
             window.isReleasedWhenClosed = false
             window.hidesOnDeactivate = false
             window.ignoresMouseEvents = true
-            window.delegate = self
             panel = window
-            applicationObserver = NSWorkspace.shared.notificationCenter.addObserver(
-                forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
-            ) { [weak self] _ in self?.runner.contextChanged() }
-            sourceObserver = DistributedNotificationCenter.default().addObserver(
-                forName: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String),
-                object: nil, queue: .main
-            ) { [weak self] _ in self?.runner.contextChanged() }
         }
         panel?.makeKeyAndOrderFront(nil)
+        // A nonactivating panel alone did not recover the failed input connection.
+        if #available(macOS 14, *) { NSApp.activate() }
+        else { NSApp.activate(ignoringOtherApps: true) }
         return true
-    }
-
-    func windowDidBecomeKey(_ notification: Notification) {
-        guard (notification.object as AnyObject?) === panel else { return }
-        runner.panelBecameKey()
     }
 }
