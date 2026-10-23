@@ -29,7 +29,11 @@ No automated test switches the user's input source or activates another app.
 
 ## Installation
 
-Pending installation and enabling the existing option on this Mac. It was explicitly disabled during the comparison, and this upgrade does not erase that preference.
+- Installed 0.7.2 (28) in `~/Library/Input Methods/Sunarae.app` after the user switched to ABC and authorized installation.
+- The installed and built executables share SHA-256 `b6aebf000985ebc62a0db3aa0e7a74487d6a1ea2bfa588d34de62d35078a4ff8`. Strict bundle signature verification passed. The process runs from the installed path.
+- Enabled **한영 전환 보완** in the installed app's settings and applied the change. The reopened setting and persisted `refreshFocusOnInputSwitch = true` were confirmed. Caps Lock switching and Escape-to-ABC remain enabled.
+- The installed signed executable passed its composition/network self-check. The settings window was closed, leaving ABC selected for the user's next physical switch.
+- Physical typing immediately after switching with the installed version has not yet been confirmed. Installation and preference checks alone do not prove that input reaches an existing editor correctly.
 
 ## Limits
 
