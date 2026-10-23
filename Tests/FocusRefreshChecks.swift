@@ -299,6 +299,140 @@ func runFocusRefreshChecks() {
         f.advance(2)
         check(f.opened == 2 && f.restored == [42, 42] && !f.visible, "new request completes independently")
     }
+    // AppKit activation can complete after cancellation or the cleanup timer.
+    for cancellation in ["english", "disable", "external-source", "timeout"] {
+        let f = FocusFixture()
+        f.runner.selected("korean")
+        f.advance()
+        switch cancellation {
+        case "english": f.source("english"); f.runner.selected("english")
+        case "disable": f.enabled = false; f.runner.cancel()
+        case "external-source": f.source("third.source"); f.runner.sourceChanged()
+        default: f.advance(0.8)
+        }
+        f.advance(5)
+        check(!f.visible && !f.runner.isPending && f.restored.isEmpty,
+              "cancelled entry closes the panel without a speculative app return")
+        let lastSource = f.context.sourceID
+        f.activate(7)
+        f.runner.observedActivation(pid: 7)
+        f.advance()
+        check(f.restored == [42] && f.opened == 1,
+              "late activation returns once without opening a new panel")
+        check(f.context.sourceID == lastSource, "recovery never reselects an input source")
+        f.activate(42)
+        f.advance(2)
+        check(!f.runner.isPending && !f.visible, "late return cleans up")
+    }
+    for finalKorean in [false, true] {
+        for timedOut in [false, true] {
+            let f = FocusFixture()
+            f.runner.selected("korean")
+            f.advance()
+            if timedOut { f.advance(0.8) }
+            for _ in 0..<100 {
+                f.source("english"); f.runner.selected("english")
+                f.source("korean"); f.runner.selected("korean")
+            }
+            if !finalKorean { f.source("english"); f.runner.selected("english") }
+            let lastSource = f.context.sourceID
+            // The old activation arrives before the newest queued request.
+            f.activate(7)
+            f.advance()
+            check(f.opened == 1 && f.restored == [42],
+                  "a late entry satisfies rapid switches without a second activation")
+            f.activate(42)
+            f.advance(2)
+            check(!f.visible && !f.runner.isPending && f.context.sourceID == lastSource,
+                  "rapid switching preserves the final language and ignores old callbacks")
+        }
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        f.source("english"); f.runner.selected("english")
+        f.source("korean"); f.runner.selected("korean"); f.advance()
+        check(f.opened == 2, "a later Korean selection can retry an uncompleted activation")
+        f.activate(7); f.advance(); f.activate(42)
+        // AppKit gives no request ID or cancellation acknowledgement. A second
+        // previously requested activation may complete after the first return.
+        f.activate(7); f.advance(); f.activate(42)
+        f.advance(2)
+        check(f.restored == [42, 42] && f.opened == 2 && !f.runner.isPending,
+              "multiple outstanding entries can each return without another activation")
+        f.source("english"); f.runner.selected("english"); f.advance(2)
+        check(f.opened == 2 && f.restored == [42, 42], "later English selection starts no trip")
+    }
+    for changeAfterCancel in [false, true] {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        if changeAfterCancel { f.source("english"); f.runner.selected("english") }
+        f.activate(99)
+        f.advance(2)
+        check(!f.visible && f.restored.isEmpty, "user-selected app is not immediately pulled back")
+        f.activate(7); f.advance()
+        check(f.restored == [99], "late entry returns to the user's newer app")
+        f.activate(99); f.advance(2)
+        check(!f.runner.isPending, "return to the newer app completes")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        f.source("english"); f.runner.selected("english")
+        f.activate(99)
+        f.runner.observedActivation(pid: 7) // notification is stale; editor is still frontmost
+        f.advance(2)
+        check(f.restored.isEmpty, "stale own-app notification must not take focus from another app")
+        f.activate(7); f.advance()
+        check(f.restored == [99], "actual late activation still recovers after a stale notification")
+    }
+    for whileActive in [false, true] {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        if whileActive { f.activate(7) }
+        else { f.source("english"); f.runner.selected("english") }
+        f.runner.prepareForUserActivation()
+        f.activate(7); f.advance(2)
+        check(f.restored.isEmpty && !f.runner.isPending && !f.visible,
+              "deliberately opening settings clears automatic return and old callbacks")
+        f.activate(42)
+        f.source("korean"); f.runner.selected("korean"); f.advance()
+        f.activate(7); f.advance()
+        check(f.restored == [42], "normal Korean refresh works after settings closes")
+    }
+    do {
+        let f = FocusFixture()
+        f.onEnter = { f.runner.cancel(); f.activate(7) }
+        f.runner.selected("korean"); f.advance()
+        check(f.restored == [42] && !f.visible,
+              "cancellation and activation inside entry still return and close the reordered panel")
+        f.activate(42); f.advance(2)
+        check(!f.runner.isPending, "reentrant late return completes")
+    }
+    for priorEntry in [false, true] {
+        let f = FocusFixture()
+        if priorEntry {
+            f.runner.selected("korean"); f.advance()
+            f.source("english"); f.runner.selected("english")
+        }
+        f.enterAccepted = false
+        f.onEnter = { f.runner.cancel() }
+        f.source("korean"); f.runner.selected("korean"); f.advance()
+        f.activate(7); f.advance()
+        check(f.restored == (priorEntry ? [42] : []),
+              "rejected entry cannot create recovery or erase an older outstanding entry")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean"); f.advance()
+        f.source("english"); f.runner.selected("english")
+        f.returnAccepted = false // the destination may have quit
+        f.activate(7); f.advance(2)
+        check(f.restored == [42] && !f.visible && !f.runner.isPending,
+              "failed late return leaves no hidden key panel or retry loop")
+        check(f.appHides == 1 && f.context.sourceID == "english",
+              "failed late return releases activation without changing language")
+    }
     do {
         var point = NSPoint(x: 20, y: 30)
         var cursorChanges: [Bool] = []

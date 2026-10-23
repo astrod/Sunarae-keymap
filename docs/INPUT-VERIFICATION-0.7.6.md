@@ -33,6 +33,10 @@ ABC was already selected, so the existing installer completed without requesting
 
 ## Limits
 
+After installation, the user reported that Ghostty appeared to work, window flicker was mild, and pointer visibility changes in their current app were tolerable. This is a normal-use report, not proof that every missed switch is repaired.
+
+A later code review reproduced a cancellation gap with injected actions: if English selection, disabling, or the cleanup timeout clears a request before the activation completes, the old runner forgets where to return when Sunarae later activates. Rapid Korean-English-Korean switching can encounter the same gap. This was reproduced in a state test, not by disrupting the user's editor. Version 0.7.7 addresses it.
+
 The earlier I/Y experiment recovered a failed switch through real app activation and return. It does not prove that this version prevents every missed switch. The separate experiment and the production input method also run in different contexts.
 
 App activation may change an editor's window frame or pointer. English starts no new trip, but an already active Korean trip still has to return. Rapid switching, immediate typing and appearance require checks in the user's apps.

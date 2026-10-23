@@ -79,6 +79,7 @@ final class ShortcutSettingsController: NSWindowController, NSWindowDelegate {
 
     func show() {
         guard let window else { return }
+        InputSourceFocusRefresh.shared.prepareForUserActivation()
         if window.isVisible { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true); return }
         candidate = manager.savedShortcut
         manualCandidate = manager.capsLockEnabled ? manager.shortcutBeforeCapsLock : candidate
