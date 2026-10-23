@@ -35,6 +35,8 @@ These checks do not prove the appearance of a real app switch. Physical appearan
 
 ## Limits
 
+After installation, the user reported that occasional window flicker remains. The update did not eliminate that symptom.
+
 Actual app activation still deactivates and reactivates the editor. Chrome may redraw its frame and ChatGPT may reset its cursor state during that change. This update reduces avoidable operations; it does not establish flicker-free behavior in all apps. There is no claim that pointer state can be preserved across arbitrary apps.
 
 Apple documents the temporary cursor policy in [setHiddenUntilMouseMoves](https://developer.apple.com/documentation/appkit/nscursor/sethiddenuntilmousemoves(_:)). This method resets on mouse movement and must not be balanced with `NSCursor.unhide`.

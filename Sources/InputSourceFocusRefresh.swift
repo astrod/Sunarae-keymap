@@ -20,6 +20,7 @@ final class FocusRefreshRunner {
     private let context: () -> FocusRefreshContext
     private let ownPID: Int32
     private let supportedSources: Set<String>
+    private let refreshSource: String
     private let enter: () -> Bool
     private let restore: (Int32) -> Bool
     private let hide: (Bool) -> Void
@@ -29,13 +30,14 @@ final class FocusRefreshRunner {
     var isPending: Bool { request != nil }
 
     init(enabled: @escaping () -> Bool, context: @escaping () -> FocusRefreshContext,
-         ownPID: Int32, supportedSources: Set<String>, enter: @escaping () -> Bool,
+         ownPID: Int32, supportedSources: Set<String>, refreshSource: String, enter: @escaping () -> Bool,
          restore: @escaping (Int32) -> Bool, hide: @escaping (Bool) -> Void,
          schedule: @escaping (Double, @escaping () -> Void) -> Void) {
         self.enabled = enabled
         self.context = context
         self.ownPID = ownPID
         self.supportedSources = supportedSources
+        self.refreshSource = refreshSource
         self.enter = enter
         self.restore = restore
         self.hide = hide
@@ -55,7 +57,9 @@ final class FocusRefreshRunner {
             return
         }
         cancel()
-        guard let pid = current.applicationPID, pid != ownPID else { return }
+        // Direct English selection never starts a trip. If a Korean trip was
+        // already active, the branch above lets it return to the same editor.
+        guard identifier == refreshSource, let pid = current.applicationPID, pid != ownPID else { return }
         nextID += 1
         let id = nextID
         request = Request(id: id, originalPID: pid, sourceID: identifier)
@@ -193,6 +197,7 @@ final class InputSourceFocusRefresh {
         },
         ownPID: ProcessInfo.processInfo.processIdentifier,
         supportedSources: [InputSource.sunaraeID, InputSource.abcID],
+        refreshSource: InputSource.sunaraeID,
         enter: { [weak self] in self?.activatePanel() ?? false },
         restore: { pid in
             guard let original = NSRunningApplication(processIdentifier: pid), !original.isTerminated else { return false }

@@ -16,7 +16,7 @@ private final class FocusFixture {
     var scheduled: [(Double, () -> Void)] = []
     lazy var runner = FocusRefreshRunner(
         enabled: { self.enabled }, context: { self.context }, ownPID: 7,
-        supportedSources: ["korean", "english"],
+        supportedSources: ["korean", "english"], refreshSource: "korean",
         enter: {
             self.opened += 1
             self.onEnter?()
@@ -74,10 +74,18 @@ func runFocusRefreshChecks() {
         f.advance(2)
         check(f.opened == 0 && f.hidden == 0, "unsupported, stale and own-settings contexts are skipped")
     }
-    for identifier in ["korean", "english"] {
+    do {
         let f = FocusFixture()
-        f.source(identifier)
-        f.runner.selected(identifier)
+        f.source("english")
+        f.runner.selected("english")
+        f.advance(2)
+        check(f.opened == 0 && f.hidden == 0 && f.restored.isEmpty,
+              "English selection changes no panel or app activation")
+        check(!f.runner.isPending && f.scheduled.isEmpty, "English selection queues no refresh")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean")
         check(f.opened == 0, "the triggering key returns before activation")
         f.advance()
         check(f.opened == 1 && f.visible && f.restored.isEmpty, "request entry without assuming activation")
@@ -98,7 +106,10 @@ func runFocusRefreshChecks() {
         f.source("english")
         f.runner.selected("english")
         f.advance()
-        check(f.opened == 1, "coalesce rapid switches before entry")
+        check(f.opened == 0 && !f.runner.isPending, "English cancels a queued Korean trip before entry")
+        f.source("korean")
+        f.runner.selected("korean")
+        f.advance()
         f.activate(7)
         f.source("korean")
         f.runner.selected("korean")
@@ -108,6 +119,8 @@ func runFocusRefreshChecks() {
         f.source("english")
         f.runner.selected("english")
         f.runner.sourceChanged()
+        f.advance()
+        check(f.opened == 1 && f.appHides == 0, "English during return starts no trip and does not hide the app")
         f.activate(42)
         f.advance(2)
         check(!f.visible && f.restored == [42], "latest choice survives return without another trip")
@@ -123,11 +136,40 @@ func runFocusRefreshChecks() {
         f.runner.selected("english")
         f.activate(42)
         f.advance()
-        check(f.opened == 2, "new selection after actual return gets its own refresh")
+        check(f.opened == 1 && !f.runner.isPending, "English after actual return starts no new refresh")
+        check(f.restored == [42] && !f.visible, "delayed return notification leaves the editor in English")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean")
+        f.source("english")
+        f.runner.selected("english")
+        f.source("korean")
+        f.runner.selected("korean")
+        f.advance()
+        check(f.opened == 1, "rapid Korean-English-Korean requests start only the final Korean trip")
         f.activate(7)
         f.advance()
         f.activate(42)
-        check(f.restored == [42, 42] && !f.visible, "both trips end at the editor")
+        f.advance(2)
+        check(f.restored == [42] && !f.visible, "cancelled queued callback cannot affect the final trip")
+    }
+    for returning in [false, true] {
+        let f = FocusFixture()
+        f.runner.selected("korean")
+        f.advance()
+        f.activate(7)
+        if returning { f.advance() }
+        f.source("english")
+        f.runner.selected("english")
+        f.runner.sourceChanged()
+        f.advance()
+        check(f.opened == 1 && f.restored == [42] && f.appHides == 0,
+              "English during an active Korean trip only completes the existing return")
+        f.activate(42)
+        f.advance(2)
+        check(!f.runner.isPending && !f.visible && f.context.sourceID == "english",
+              "English stays selected after the existing Korean trip finishes")
     }
     do {
         let f = FocusFixture()
