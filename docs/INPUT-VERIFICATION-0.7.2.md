@@ -35,6 +35,10 @@ No automated test switches the user's input source or activates another app.
 - The installed signed executable passed its composition/network self-check. The settings window was closed, leaving ABC selected for the user's next physical switch.
 - Physical typing immediately after switching with the installed version has not yet been confirmed. Installation and preference checks alone do not prove that input reaches an existing editor correctly.
 
+## Subsequent user report
+
+The user reported window-frame flicker in Chrome when switching to English, and a mouse pointer appearing in ChatGPT. The standalone Y result did not predict these appearance effects during automatic production switching. The user asked to keep the real app round trip while reducing these effects.
+
 ## Limits
 
 The diagnostic used a separate accessory app. The production input method uses the same activation/return sequence but runs inside its existing IMK process and triggers it after source selection. The macOS 13 fallback and typing immediately after production switches require physical verification. No key buffer or synthetic replay is added. A window-free or zero-latency switch is not claimed.

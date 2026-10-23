@@ -6,6 +6,7 @@ private final class FocusFixture {
     var visible = false
     var opened = 0
     var hidden = 0
+    var appHides = 0
     var restored: [Int32] = []
     var enterAccepted = true
     var returnAccepted = true
@@ -23,7 +24,10 @@ private final class FocusFixture {
             return self.enterAccepted
         },
         restore: { self.restored.append($0); self.onRestore?(); return self.returnAccepted },
-        hide: { self.hidden += 1; self.visible = false },
+        hide: { abandon in
+            self.hidden += 1; self.visible = false
+            if abandon { self.appHides += 1 }
+        },
         schedule: { self.scheduled.append((self.time + $0, $1)) }
     )
 
@@ -84,6 +88,7 @@ func runFocusRefreshChecks() {
         check(f.runner.isPending, "accepted request does not prove app returned")
         f.activate(42)
         check(!f.runner.isPending && !f.visible, "return notification closes the panel")
+        check(f.appHides == 0, "normal return never hides the whole input-method app")
         f.advance(2)
         check(f.restored == [42] && f.hidden == 1, "stale timeouts do nothing")
     }
@@ -174,12 +179,31 @@ func runFocusRefreshChecks() {
     }
     do {
         let f = FocusFixture()
+        f.runner.selected("korean")
+        f.advance()
+        f.activate(7)
+        f.advance()
+        // The return notification is authoritative even if local state is stale.
+        f.runner.observedActivation(pid: 42)
+        check(!f.visible && f.appHides == 0, "stale active state must not cause another app hide on return")
+    }
+    do {
+        let f = FocusFixture()
+        f.runner.selected("korean")
+        f.advance()
+        f.activate(7)
+        f.runner.observedActivation(pid: 99)
+        check(!f.visible && f.appHides == 0, "third-app notification must not cause app hide")
+    }
+    do {
+        let f = FocusFixture()
         f.returnAccepted = false
         f.runner.selected("korean")
         f.advance()
         f.activate(7)
         f.advance(2)
         check(f.restored == [42] && !f.visible && !f.runner.isPending, "rejected return does not leave hidden key panel")
+        check(f.appHides == 1, "failed return still abandons owned activation")
     }
     for duringEntry in [false, true] {
         let f = FocusFixture()
@@ -232,6 +256,29 @@ func runFocusRefreshChecks() {
         f.activate(42)
         f.advance(2)
         check(f.opened == 2 && f.restored == [42, 42] && !f.visible, "new request completes independently")
+    }
+    do {
+        var point = NSPoint(x: 20, y: 30)
+        var cursorChanges: [Bool] = []
+        let cursor = FocusRefreshCursor(location: { point }, setHidden: { cursorChanges.append($0) })
+        cursor.becameActive()
+        cursor.clear()
+        check(cursorChanges.isEmpty, "settings activation outside a refresh leaves cursor alone")
+        cursor.prepare()
+        cursor.becameActive()
+        check(cursorChanges == [true, true], "apply the pointer policy again after actual activation")
+        cursor.clear()
+        cursor.clear()
+        check(cursorChanges == [true, true, false], "resign or cleanup releases pointer policy once")
+        cursor.prepare()
+        point = NSPoint(x: 21, y: 30)
+        cursor.becameActive()
+        cursor.clear()
+        check(cursorChanges == [true, true, false, true, false], "mouse movement before activation cancels pointer hiding")
+        cursor.prepare()
+        cursor.clear()
+        cursor.becameActive()
+        check(cursorChanges == [true, true, false, true, false, true, false], "late activation after cancellation does not hide pointer")
     }
     print("App round-trip lifecycle checks passed: \(count) (no real focus changes)")
 }

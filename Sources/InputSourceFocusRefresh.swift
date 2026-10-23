@@ -22,7 +22,7 @@ final class FocusRefreshRunner {
     private let supportedSources: Set<String>
     private let enter: () -> Bool
     private let restore: (Int32) -> Bool
-    private let hide: () -> Void
+    private let hide: (Bool) -> Void
     private let schedule: (Double, @escaping () -> Void) -> Void
     private var nextID = 0
     private var request: Request?
@@ -30,7 +30,7 @@ final class FocusRefreshRunner {
 
     init(enabled: @escaping () -> Bool, context: @escaping () -> FocusRefreshContext,
          ownPID: Int32, supportedSources: Set<String>, enter: @escaping () -> Bool,
-         restore: @escaping (Int32) -> Bool, hide: @escaping () -> Void,
+         restore: @escaping (Int32) -> Bool, hide: @escaping (Bool) -> Void,
          schedule: @escaping (Double, @escaping () -> Void) -> Void) {
         self.enabled = enabled
         self.context = context
@@ -78,7 +78,7 @@ final class FocusRefreshRunner {
         let entered = enter()
         guard request?.id == id else {
             // AppKit may finish ordering the panel after a reentrant cancellation.
-            hide()
+            hide(false)
             return
         }
         if !entered { cancel() }
@@ -93,10 +93,10 @@ final class FocusRefreshRunner {
             // Same as the successful Y trial: no fixed dwell after activation.
             schedule(0) { [weak self] in self?.returnToOriginal(pending.id) }
         } else if pid == pending.originalPID {
-            if pending.phase == .returning || pending.activated { finish(pending.id) }
+            if pending.phase == .returning || pending.activated { finish(pending.id, activePID: pid) }
         } else {
             // A user-selected third app wins. Never pull it back to the old app.
-            finish(pending.id)
+            finish(pending.id, activePID: pid)
         }
     }
 
@@ -119,10 +119,14 @@ final class FocusRefreshRunner {
         }
     }
 
-    private func finish(_ id: Int) {
+    private func finish(_ id: Int, activePID: Int32? = nil) {
         guard let pending = request, pending.id == id else { return }
         request = nil
-        if pending.phase != .queued { hide() }
+        if pending.phase != .queued {
+            // A workspace return notification can arrive before our local
+            // isActive flag clears. Never hide the whole app on normal return.
+            hide((activePID ?? context().applicationPID) == ownPID)
+        }
     }
 
     func cancel() {
@@ -131,7 +135,38 @@ final class FocusRefreshRunner {
         if pending.phase == .entering, context().applicationPID == ownPID {
             _ = restore(pending.originalPID)
         }
-        if pending.phase != .queued { hide() }
+        if pending.phase != .queued { hide(context().applicationPID == ownPID) }
+    }
+}
+
+/// Hides this app's pointer while it briefly handles a keyboard-driven refresh.
+/// The editor keeps control of its own cursor after we return.
+final class FocusRefreshCursor {
+    private let location: () -> NSPoint
+    private let setHidden: (Bool) -> Void
+    private var startLocation: NSPoint?
+
+    init(location: @escaping () -> NSPoint, setHidden: @escaping (Bool) -> Void) {
+        self.location = location
+        self.setHidden = setHidden
+    }
+
+    func prepare() {
+        startLocation = location()
+        setHidden(true)
+    }
+
+    func becameActive() {
+        guard let startLocation else { return }
+        // Do not re-hide a pointer the user moved while activation was pending.
+        if location() != startLocation { clear() }
+        else { setHidden(true) }
+    }
+
+    func clear() {
+        guard startLocation != nil else { return }
+        startLocation = nil
+        setHidden(false)
     }
 }
 
@@ -147,6 +182,9 @@ final class InputSourceFocusRefresh {
     private var panel: InputFocusPanel?
     private var applicationObserver: NSObjectProtocol?
     private var sourceObserver: NSObjectProtocol?
+    private var localObservers: [NSObjectProtocol] = []
+    private let cursor = FocusRefreshCursor(location: { NSEvent.mouseLocation },
+                                           setHidden: { NSCursor.setHiddenUntilMouseMoves($0) })
     private lazy var runner = FocusRefreshRunner(
         enabled: { InputSettings.shared.refreshFocusOnInputSwitch },
         context: {
@@ -164,9 +202,10 @@ final class InputSourceFocusRefresh {
             }
             return original.activate(options: [.activateIgnoringOtherApps])
         },
-        hide: { [weak self] in
+        hide: { [weak self] abandonActivation in
             self?.panel?.orderOut(nil)
-            if NSApp.isActive { NSApp.hide(nil) }
+            if abandonActivation && NSApp.isActive { NSApp.hide(nil) }
+            if !NSApp.isActive { self?.cursor.clear() }
         },
         schedule: { delay, action in
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { action() }
@@ -174,6 +213,12 @@ final class InputSourceFocusRefresh {
     )
 
     private init() {
+        localObservers.append(NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: NSApp, queue: .main
+        ) { [weak self] _ in self?.cursor.becameActive() })
+        localObservers.append(NotificationCenter.default.addObserver(
+            forName: NSApplication.didResignActiveNotification, object: NSApp, queue: .main
+        ) { [weak self] _ in self?.cursor.clear() })
         applicationObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
         ) { [weak self] note in
@@ -197,6 +242,7 @@ final class InputSourceFocusRefresh {
     func cancel() {
         precondition(Thread.isMainThread)
         runner.cancel()
+        if !NSApp.isActive { cursor.clear() }
     }
 
     private func activatePanel() -> Bool {
@@ -219,6 +265,7 @@ final class InputSourceFocusRefresh {
             window.ignoresMouseEvents = true
             panel = window
         }
+        cursor.prepare()
         panel?.makeKeyAndOrderFront(nil)
         // A nonactivating panel alone did not recover the failed input connection.
         if #available(macOS 14, *) { NSApp.activate() }
