@@ -18,4 +18,12 @@ The new cases cover all 16 dedicated-key replacements, suspension/restoration, a
 
 ## Live checks
 
-Pending installation and coordinated settings checks. The pre-install read-only check found two keyboard services, both with Caps Lock (`0x700000039`) mapped to F18 (`0x70000006d`). No other mappings were present.
+Installed 0.8.0 (35) after the user selected ABC and approved the settings test. The previous 0.7.8 app and preferences are backed up under `build/backups/before-switch-keys.mrw8envw/`. The installed executable matches the checked build (SHA-256 `01be717194f7177eeba5625962cef013fad7f6de0a1872327fa1fa7e8314651d`), and `make diagnose` passed the version, signature and registration checks.
+
+The settings window retained Caps Lock and the enabled focus-refresh option after upgrade. Read-only inspection found two keyboard services, both with Caps Lock (`0x700000039`) mapped to F18 (`0x70000006d`). Recording removed that mapping from both services. Recording F19 restored both Caps Lock mappings without applying the candidate; Cancel and reopening the window showed Caps Lock again. No new privacy permission prompt appeared.
+
+The user physically recorded right Command; the settings window displayed that choice. Apply replaced Caps Lock with right Command (`0x7000000e7`) → F18 on both keyboard services. Reopening settings retained the choice. Starting another recording and pressing Escape restored right Command on both services. Recording Caps Lock and applying it then restored Caps Lock → F18 on both services, with no right Command mapping left. The settings window was closed at the end of the test.
+
+Caps Lock recording and Apply also migrated the old preference keys to `mappedSwitchKey=capsLock` and `switchKeyOwnsLoginItem=true`. The focus-refresh and Escape settings remained enabled. No input-source switching or composition implementation changed from 0.7.8.
+
+The UI automation tool rejects standalone modifier key presses. Right Option and right Control have injected-event coverage, but have not been physically recorded on this Mac. The live test confirmed right Command capture and HID mapping, not physical-key language switching in each target app. Those limits are separate from the passing automated checks above.
